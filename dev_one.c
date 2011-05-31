@@ -9,12 +9,15 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <libgen.h>
 
 typedef unsigned char u8;
 typedef unsigned long long u64;
 
-#define BLOCK_SIZE 4096
-u8 buf[BLOCK_SIZE];
+/* 8MB should be future proof for at least a couple of years...  */
+#define DEFAULT_BLOCK_SIZE 8*1024*1024
+unsigned int BLOCK_SIZE = 0;
+u8 *buf;
 
 static void showstatus(u64 pos)
 {
@@ -67,7 +70,7 @@ static void showstatus_timed(u64 pos, struct showstatus_state *stat)
 
 u64 writedata(char *file, unsigned int seed)
 {
-	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT, S_IWUSR|S_IRUSR);
+	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
 	u64 pos = 0;
 	ssize_t count;
 
@@ -94,6 +97,54 @@ out:
 	return pos;
 }
 
+void _alloc_bufs(unsigned int size) {
+	BLOCK_SIZE = size;
+	buf = malloc(BLOCK_SIZE);
+	if (!buf) {
+		perror("malloc");
+		exit(1);
+	}
+	return;
+}
+
+void alloc_bufs(char *filename)
+{
+	char *devname;
+	char sys_fn[256];
+	int fp;
+	char tmp[64];
+	unsigned int size;
+
+	/* If it is an SD card, try to determine the erase block size */
+	devname = basename(filename);
+	if (snprintf(sys_fn, 256, "/sys/class/block/%s/device/preferred_erase_size", devname) < 0)
+		goto def_bs;
+
+	fp = open(sys_fn, O_RDONLY);
+	if (fp < 0)
+		goto def_bs;
+
+	memset(tmp, 0, 64);
+	/* Assume this call will not be interrupted */
+	if (read(fp, tmp, 64) <= 0)
+		goto def_bs_close;
+
+	/* Potential overflow if 64 chars read and lacking NULL terminator */
+	if (sscanf(tmp, "%u", &size) != 1)
+		goto def_bs_close;
+
+	close(fp);
+
+	printf("\x1b[36mUsing erase size of %u bytes\x1b[0m\n", size);
+	return _alloc_bufs(size);
+
+def_bs_close:
+	close(fp);
+def_bs:
+	printf("\x1b[1;33mNOTE: Could not determine erase block size of %s - assuming %u bytes\x1b[0m\n", devname, DEFAULT_BLOCK_SIZE);
+	return _alloc_bufs(DEFAULT_BLOCK_SIZE);
+}
+
 int main(int argc, char *argv[])
 {
 	unsigned int seed = 0xDEBAC1E;
@@ -106,7 +157,9 @@ int main(int argc, char *argv[])
 	}
 	filename = argv[1];
 
-	memset(&buf, 0xff, BLOCK_SIZE);
+	alloc_bufs(filename);
+
+	memset(buf, 0xff, BLOCK_SIZE);
 
 	written = writedata(argv[1], seed);
 	printf("\x1b[36m%llu bytes written to %s.\x1b[0m\n", written, filename);

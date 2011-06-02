@@ -68,7 +68,7 @@ static void showstatus_init(struct showstatus_state *stat)
 	stat->last_pos = 0;
 }
 
-static void showstatus_timed(u64 pos, struct showstatus_state *stat)
+static void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 {
 	struct timeval tv;
 	u64 usec, delta, bytes;
@@ -90,7 +90,7 @@ static void showstatus_timed(u64 pos, struct showstatus_state *stat)
 			rate /= 1024.0;
 			units = "MB";
 		}
-		printf("%#.8llx @ %f %s/Sec...\n", pos, rate, units);
+		printf("%s%#.8llx @ %f %s/Sec...\n", msg, pos, rate, units);
 
 		stat->last_usec = usec;
 		stat->last_pos = pos;
@@ -124,7 +124,7 @@ u64 writedata(char *file, unsigned int seed)
 			pos += count;
 		}
 
-		showstatus_timed(pos, &stat);
+		showstatus_timed(pos, &stat, "writing ");
 	}
 
 out:
@@ -164,7 +164,7 @@ u64 verifydata(char *file, unsigned int seed)
 		}
 		verifyblock(startpos, seed, BLOCK_SIZE);
 
-		showstatus_timed(pos, &stat);
+		showstatus_timed(pos, &stat, "verifying ");
 	}
 
 out:

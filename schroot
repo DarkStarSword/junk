@@ -1,0 +1,143 @@
+#!/bin/sh
+
+chroot=/media/mmc1/debian
+if [ "$1" = "-r" ]; then
+	chrootsu=0
+else
+	chrootsu=1
+fi
+chrootuser= # autodetect
+chrootuser_grant_sudo=1
+chrootPS1='\[[1;36m\][debian]\[[0m\]\w \[[36m\]\$\[[0m\] '
+chrootPS1root='\[[1;31m\][debian]\[[0m\]\w \[[31m\]\$\[[0m\] '
+
+bindmounts="/dev /sys /proc /home"
+bindroot="/orig_root"
+copyfiles="/etc/resolv.conf /etc/hostname"
+
+warn()
+{
+	echo "$@"
+}
+
+die()
+{
+	echo "$@"
+	exit 1
+}
+
+[ -z "$chroot" ] && die No chroot specified
+[ "`readlink -f "$chroot"`" = "/" ] && die Attempted to chroot to /
+
+if [ `id -u` != 0 ]; then
+	echo Becomming root...
+	sudo `readlink -f "$0"` "$@"
+	exit
+fi
+
+setup_user()
+{
+	if [ "$chrootsu" != "1" ]; then
+		chrootuser=
+		return
+	fi
+	if [ -z "$chrootuser" ]; then
+		if [ -n "$SUDO_USER" ]; then
+			chrootuser="$SUDO_USER"
+		else
+			echo SUDO_USER not set - remaining as root in chroot
+		fi
+	fi
+	echo Setting up "$chrootuser" in chroot...
+
+	tmp=`mktemp /tmp/tmp.XXXXXXXXXX`
+	for f in /etc/passwd /etc/shadow; do
+		if [ ! -f "$f" -o ! -f "$chroot/$f" ]; then
+			echo "Skipping update to $chroot/$f - file does not exist"
+			continue
+		fi
+		echo "Updating $chrootuser in $chroot/$f"
+		grep -v "^$chrootuser:" "$chroot/$f" > "$tmp"
+		grep "^$chrootuser:" "$f" | cat "$tmp" - > "$chroot/$f"
+	done
+	if [ $chrootuser_grant_sudo -eq 1 ]; then
+		if [ -f "/etc/sudoers" -a -f "$chroot/etc/sudoers" ]; then
+			echo "Granting $chrootuser sudo access in chroot"
+			grep -v "^$chrootuser ALL=(ALL) ALL$" "$chroot/etc/sudoers" > "$tmp"
+			echo "$chrootuser ALL=(ALL) ALL" | cat "$tmp" - > "$chroot/etc/sudoers"
+		else
+			echo "Skipping update to /etc/sudoers - file does not exist"
+		fi
+	fi
+	rm "$tmp"
+}
+
+chrootinuse()
+{
+	ls -l /proc/*/root|grep "\s$chroot$" >/dev/null
+}
+
+setup()
+{
+	chrootinuse && return
+	if [ -n "$bindroot" ]; then
+		echo "Binding / to $chroot/$bindroot..."
+		mkdir "$chroot/$bindroot" 2>/dev/null
+		mount --bind / "$chroot/$bindroot"
+	fi
+	for mountpoint in $bindmounts; do
+		echo "Binding $mountpoint to $chroot/$mountpoint..."
+		mount --bind "$mountpoint" "$chroot/$mountpoint" || die "Failed to bind mount $mountpoint"
+	done
+	for file in $copyfiles; do
+		echo "Copying $file into $chroot/$file..."
+		cp -f "$file" "$chroot/$file" || die "Failed to copy $file"
+	done
+	echo "Linking $chroot/etc/mtab to /proc/self/mounts"
+	ln -sf /proc/self/mounts "$chroot/etc/mtab" || die "Failed to link /etc/mtab"
+	echo "Updating $chroot/etc/hosts entry for $(hostname)..."
+	tmp=`mktemp /tmp/tmp.XXXXXXXXXX`
+	grep -v "^127.0.0.1 $(hostname)$" "$chroot/etc/hosts" > "$tmp"
+	echo "127.0.0.1 $(hostname)" | cat "$tmp" - > "$chroot/etc/hosts"
+	rm $tmp
+}
+
+cleanup()
+{
+	if chrootinuse; then
+		echo chroot still in use, not cleaning up.
+		return
+	fi
+	echo "Cleaning up chroot environment..."
+	for mountpoint in $bindmounts; do
+		echo "Unmounting $chroot/$mountpoint..."
+		umount "$chroot/$mountpoint" || warn "Failed to unmount $mountpoint"
+	done
+	if [ -n "$bindroot" ]; then
+		echo "Unmounting $chroot/$bindroot..."
+		umount "$chroot/$bindroot"
+	fi
+}
+
+enter_chroot()
+{
+	#export PS1="$chrootPS1"
+	if [ -n "$chrootuser" ]; then
+		echo "Entering $chroot as $chrootuser..."
+		#chroot "$chroot" su $chrootuser
+		#chroot "$chroot" su $chrootuser -l -c "env PS1='$chrootPS1' $SHELL"
+		chroot "$chroot" su $chrootuser -l -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $SHELL"
+	else
+		echo "Entering $chroot..."
+		#chroot "$chroot"
+		chroot "$chroot" env PS1="$chrootPS1root" $SHELL
+	fi
+}
+
+# HACK HACK HACK
+mount | grep /media/mmc1 >/dev/null || mount /dev/mmcblk1p1 /media/mmc1
+
+trap cleanup EXIT
+setup
+setup_user
+enter_chroot

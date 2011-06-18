@@ -1,4 +1,5 @@
 #!/bin/sh
+# vi:sw=2:ts=2:noexpandtab:nowrap
 
 chroot=/media/mmc1/debian
 if [ "$1" = "-r" ]; then
@@ -11,7 +12,8 @@ chrootuser_grant_sudo=1
 chrootPS1='\[[1;36m\][debian]\[[0m\]\w \[[36m\]\$\[[0m\] '
 chrootPS1root='\[[1;31m\][debian]\[[0m\]\w \[[31m\]\$\[[0m\] '
 
-bindmounts="/dev /sys /proc /home"
+bindmounts="/dev /dev/pts /sys /proc /home"
+tmpmounts="/tmp"
 bindroot="/orig_root"
 copyfiles="/etc/resolv.conf /etc/hostname"
 
@@ -80,6 +82,11 @@ chrootinuse()
 setup()
 {
 	chrootinuse && return
+	if mount | grep "$chroot$bindroot"; then # Missing / intentional
+		echo Stale chroot environment detected, cleaning up...
+		cleanup
+	fi
+	echo Setting up chroot environment...
 	if [ -n "$bindroot" ]; then
 		echo "Binding / to $chroot/$bindroot..."
 		mkdir "$chroot/$bindroot" 2>/dev/null
@@ -88,6 +95,10 @@ setup()
 	for mountpoint in $bindmounts; do
 		echo "Binding $mountpoint to $chroot/$mountpoint..."
 		mount --bind "$mountpoint" "$chroot/$mountpoint" || die "Failed to bind mount $mountpoint"
+	done
+	for mountpoint in $tmpmounts; do
+		echo "Mounting tmpfs on $chroot/$mountpoint..."
+		mount -t tmpfs nodev "$chroot/$mountpoint" || die "Failed to mount $mountpoint"
 	done
 	for file in $copyfiles; do
 		echo "Copying $file into $chroot/$file..."
@@ -109,14 +120,12 @@ cleanup()
 		return
 	fi
 	echo "Cleaning up chroot environment..."
-	for mountpoint in $bindmounts; do
+	for mountpoint in $(echo $bindmounts $tmpmounts $bindroot | tr ' ' '\n' | tac); do
 		echo "Unmounting $chroot/$mountpoint..."
 		umount "$chroot/$mountpoint" || warn "Failed to unmount $mountpoint"
+		# In case it has been mounted multiple times:
+		while umount "$chroot/$mountpoint" 2>/dev/null;do true;done
 	done
-	if [ -n "$bindroot" ]; then
-		echo "Unmounting $chroot/$bindroot..."
-		umount "$chroot/$bindroot"
-	fi
 }
 
 enter_chroot()

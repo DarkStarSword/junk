@@ -104,8 +104,13 @@ setup()
 		echo "Copying $file into $chroot/$file..."
 		cp -f "$file" "$chroot/$file" || die "Failed to copy $file"
 	done
-	echo "Linking $chroot/etc/mtab to /proc/self/mounts"
-	ln -sf /proc/self/mounts "$chroot/etc/mtab" || die "Failed to link /etc/mtab"
+
+	echo "Updating $chroot/etc/mtab..."
+	rm $chroot/etc/mtab
+	sub_bindroot=$(echo $bindroot | sed 's/\//\\\//g')
+	sub_chroot=$(echo $chroot | sed 's/\//\\\//g')
+	sed "s/^\(\S*\) \(\S*\) /\1 $sub_bindroot\2 /g; s/^\(\S*\) $sub_bindroot$sub_chroot/\1 /" </proc/mounts > "$chroot/etc/mtab" || die "Failed to update $chroot/etc/mtab"
+
 	echo "Updating $chroot/etc/hosts entry for $(hostname)..."
 	tmp=`mktemp /tmp/tmp.XXXXXXXXXX`
 	grep -v "^127.0.0.1 $(hostname)$" "$chroot/etc/hosts" > "$tmp"

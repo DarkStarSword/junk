@@ -12,7 +12,8 @@ chrootuser_grant_sudo=1
 chrootPS1='\[[1;36m\][debian]\[[0m\]\w \[[36m\]\$\[[0m\] '
 chrootPS1root='\[[1;31m\][debian]\[[0m\]\w \[[31m\]\$\[[0m\] '
 
-bindmounts="/dev /dev/pts /sys /proc /home"
+# --rbind doesn't seem to work on the n900, so include desired submounts here:
+bindmounts="/dev /dev/pts /dev/shm /sys /sys/kernel/debug /proc /home /home/user/MyDocs"
 tmpmounts="/tmp"
 bindroot="/orig_root"
 copyfiles="/etc/resolv.conf /etc/hostname"
@@ -90,11 +91,11 @@ setup()
 	if [ -n "$bindroot" ]; then
 		echo "Binding / to $chroot/$bindroot..."
 		mkdir "$chroot/$bindroot" 2>/dev/null
-		mount --bind / "$chroot/$bindroot"
+		mount --rbind / "$chroot/$bindroot"
 	fi
 	for mountpoint in $bindmounts; do
 		echo "Binding $mountpoint to $chroot/$mountpoint..."
-		mount --bind "$mountpoint" "$chroot/$mountpoint" || die "Failed to bind mount $mountpoint"
+		mount --rbind "$mountpoint" "$chroot/$mountpoint" || die "Failed to bind mount $mountpoint"
 	done
 	for mountpoint in $tmpmounts; do
 		echo "Mounting tmpfs on $chroot/$mountpoint..."

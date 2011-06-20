@@ -136,6 +136,7 @@ setup()
 	done
 	for mountpoint in $tmpmounts; do
 		echo "Mounting tmpfs on $chroot$mountpoint..."
+		mkdir -p "$chroot$mountpoint" 2>/dev/null
 		mount -t tmpfs nodev "$chroot$mountpoint" || die "Failed to mount $mountpoint"
 	done
 	for file in $copyfiles; do

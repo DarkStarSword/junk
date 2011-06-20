@@ -6,8 +6,10 @@ chrootsu=1
 chrootuser= # autodetect
 chrootuser_grant_sudo=1
 chrootshell="$SHELL"
+
+# In bash style, we do some simple transformations for other shells
 chrootPS1='\[[1;36m\][chroot]\[[0m\]\w \[[36m\]\$\[[0m\] '
-chrootPS1root='\[[1;31m\][chroot]\[[0m\]\w \[[31m\]\$\[[0m\] '
+chrootPS1root='\[[1;31m\][chroot]\[[0m\]\w \[[31m\]#\[[0m\] '
 
 bindmounts="/dev /sys /proc /home"
 tmpmounts="/tmp"
@@ -169,21 +171,46 @@ cleanup()
 	done
 }
 
+_sanitise_PS1_other()
+{
+	# - Remove the '\[' and '\]' bashisms
+	# - Replace '\w' with '$PWD'
+	chrootPS1=$(echo "$chrootPS1" | sed 's/\\\[//g; s/\\\]//g; s/\\w/$PWD/g')
+	chrootPS1root=$(echo "$chrootPS1root" | sed 's/\\\[//g; s/\\\]//g; s/\\w/$PWD/g')
+}
+_sanitise_PS1_zsh()
+{
+	# NOTE: Largely untested
+	# - Replace '\[' and '\]' with zsh equivalents '%{' and '%}'
+	# - Replace '\w' with '%~'
+	chrootPS1=$(echo "$chrootPS1" | sed 's/\\\[/%{/g; s/\\\]/%}/g; s/\\w/%~/g')
+	chrootPS1root=$(echo "$chrootPS1root" | sed 's/\\\[/%{/g; s/\\\]/%}/g; s/\\w/%~/g')
+}
+sanitise_PS1()
+{
+	s=$(basename $(readlink -f "$chroot$chrootshell"))
+	case "$s" in
+		'zsh')  _sanitise_PS1_zsh ;;
+		'bash') ;; # Do nothing - strings are already in bash format
+		*)      _sanitise_PS1_other;;
+	esac
+}
+
 enter_chroot()
 {
-	#export PS1="$chrootPS1"
 	if [ -n "$chrootuser" ]; then
 		echo "Entering $chroot as $chrootuser..."
 		chroot "$chroot" su $chrootuser -l -s "$chrootshell" -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $chrootshell"
 	else
 		echo "Entering $chroot..."
-		chroot "$chroot" env PS1="$chrootPS1root" $chrootshell
+		chroot "$chroot" su -l -c "env PS1='$chrootPS1root' $chrootshell"
 	fi
 }
 
 parse_args "$@"
 check_params
 become_root "$@"
+sanitise_PS1
 trap cleanup EXIT
 setup
 setup_user

@@ -55,13 +55,13 @@ setup_user()
 
 	tmp=`mktemp /tmp/tmp.XXXXXXXXXX`
 	for f in /etc/passwd /etc/shadow; do
-		if [ ! -f "$f" -o ! -f "$chroot/$f" ]; then
-			echo "Skipping update to $chroot/$f - file does not exist"
+		if [ ! -f "$f" -o ! -f "$chroot$f" ]; then
+			echo "Skipping update to $chroot$f - file does not exist"
 			continue
 		fi
-		echo "Updating $chrootuser in $chroot/$f"
-		grep -v "^$chrootuser:" "$chroot/$f" > "$tmp"
-		grep "^$chrootuser:" "$f" | cat "$tmp" - > "$chroot/$f"
+		echo "Updating $chrootuser in $chroot$f"
+		grep -v "^$chrootuser:" "$chroot$f" > "$tmp"
+		grep "^$chrootuser:" "$f" | cat "$tmp" - > "$chroot$f"
 	done
 	if [ $chrootuser_grant_sudo -eq 1 ]; then
 		if [ -f "/etc/sudoers" -a -f "$chroot/etc/sudoers" ]; then
@@ -83,27 +83,28 @@ chrootinuse()
 setup()
 {
 	chrootinuse && return
-	if mount | grep "$chroot$bindroot"; then # Missing / intentional
+	if mount | grep "$chroot$bindroot"; then
 		echo Stale chroot environment detected, cleaning up...
 		cleanup
 	fi
 	echo Setting up chroot environment...
 	if [ -n "$bindroot" ]; then
-		echo "Binding / to $chroot/$bindroot..."
-		mkdir "$chroot/$bindroot" 2>/dev/null
-		mount --rbind / "$chroot/$bindroot"
+		echo "Binding / to $chroot$bindroot..."
+		mkdir -p "$chroot$bindroot" 2>/dev/null
+		mount --rbind / "$chroot$bindroot"
 	fi
 	for mountpoint in $bindmounts; do
-		echo "Binding $mountpoint to $chroot/$mountpoint..."
-		mount --rbind "$mountpoint" "$chroot/$mountpoint" || die "Failed to bind mount $mountpoint"
+		echo "Binding $mountpoint to $chroot$mountpoint..."
+		mkdir -p "$chroot$mountpoint" 2>/dev/null
+		mount --rbind "$mountpoint" "$chroot$mountpoint" || die "Failed to bind mount $mountpoint"
 	done
 	for mountpoint in $tmpmounts; do
-		echo "Mounting tmpfs on $chroot/$mountpoint..."
-		mount -t tmpfs nodev "$chroot/$mountpoint" || die "Failed to mount $mountpoint"
+		echo "Mounting tmpfs on $chroot$mountpoint..."
+		mount -t tmpfs nodev "$chroot$mountpoint" || die "Failed to mount $mountpoint"
 	done
 	for file in $copyfiles; do
-		echo "Copying $file into $chroot/$file..."
-		cp -f "$file" "$chroot/$file" || die "Failed to copy $file"
+		echo "Copying $file into $chroot$file..."
+		cp -f "$file" "$chroot$file" || die "Failed to copy $file"
 	done
 
 	echo "Updating $chroot/etc/mtab..."
@@ -127,10 +128,10 @@ cleanup()
 	fi
 	echo "Cleaning up chroot environment..."
 	for mountpoint in $(echo $bindmounts $tmpmounts $bindroot | tr ' ' '\n' | tac); do
-		echo "Unmounting $chroot/$mountpoint..."
-		umount "$chroot/$mountpoint" || warn "Failed to unmount $mountpoint"
+		echo "Unmounting $chroot$mountpoint..."
+		umount -l "$chroot$mountpoint" || warn "Failed to unmount $mountpoint"
 		# In case it has been mounted multiple times:
-		while umount "$chroot/$mountpoint" 2>/dev/null;do true;done
+		while umount -l "$chroot$mountpoint" 2>/dev/null;do true;done
 	done
 }
 

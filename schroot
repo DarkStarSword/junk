@@ -24,12 +24,12 @@ fi
 
 warn()
 {
-	echo "$@"
+	echo "[1;33m$@[0m"
 }
 
 die()
 {
-	echo "$@"
+	echo "[1;31m$@[0m"
 	exit 1
 }
 

@@ -1,22 +1,24 @@
 #!/bin/sh
 # vi:sw=2:ts=2:noexpandtab:nowrap
 
-chroot=/media/mmc1/debian
-if [ "$1" = "-r" ]; then
-	chrootsu=0
-else
-	chrootsu=1
-fi
+chroot=
+chrootsu=1
 chrootuser= # autodetect
 chrootuser_grant_sudo=1
-chrootPS1='\[[1;36m\][debian]\[[0m\]\w \[[36m\]\$\[[0m\] '
-chrootPS1root='\[[1;31m\][debian]\[[0m\]\w \[[31m\]\$\[[0m\] '
+chrootshell="$SHELL"
+chrootPS1='\[[1;36m\][chroot]\[[0m\]\w \[[36m\]\$\[[0m\] '
+chrootPS1root='\[[1;31m\][chroot]\[[0m\]\w \[[31m\]\$\[[0m\] '
 
-# --rbind doesn't seem to work on the n900, so include desired submounts here:
-bindmounts="/dev /dev/pts /dev/shm /sys /sys/kernel/debug /proc /home /home/user/MyDocs"
+bindmounts="/dev /sys /proc /home"
 tmpmounts="/tmp"
 bindroot="/orig_root"
 copyfiles="/etc/resolv.conf /etc/hostname"
+
+# Ensure the correct ~/.schrootrc is expanded after sudo $0:
+[ -z "$SCHROOTRC" ] && export SCHROOTRC=~/.schrootrc
+if [ -f "$SCHROOTRC" ]; then
+	. "$SCHROOTRC"
+fi
 
 warn()
 {
@@ -29,14 +31,46 @@ die()
 	exit 1
 }
 
-[ -z "$chroot" ] && die No chroot specified
-[ "`readlink -f "$chroot"`" = "/" ] && die Attempted to chroot to /
+usage()
+{
+	echo "Usage: $0 [-r] [-s shell] [chroot]"
+	exit 1
+}
 
-if [ `id -u` != 0 ]; then
-	echo Becomming root...
-	sudo `readlink -f "$0"` "$@"
-	exit
-fi
+parse_args()
+{
+	while getopts 'rs:' arg; do
+		case "$arg" in
+		r)  chrootsu=0 ;;
+		s)	chrootshell="$OPTARG";;
+		\?) usage;;
+		esac
+	done
+	shift $(($OPTIND - 1))
+
+	if [ -n "$1" ]; then
+		chroot="$1"; shift
+	fi
+
+	[ $# -ge 1 ] && usage
+}
+
+check_params()
+{
+	[ -z "$chroot" ] && die No chroot specified
+	[ "`readlink -f "$chroot"`" = "/" ] && die Attempted to chroot to /
+	[ -d "$chroot" ] || die chroot target is not a directory
+	[ -x "$chroot$chrootshell" ] || die "$chrootshell not found or not executable inside chroot, aborting"
+}
+
+become_root()
+{
+	if [ `id -u` != 0 ]; then
+		echo Becomming root...
+		sudo -E `readlink -f "$0"` "$@"
+		exit
+	fi
+}
 
 setup_user()
 {
@@ -140,19 +174,16 @@ enter_chroot()
 	#export PS1="$chrootPS1"
 	if [ -n "$chrootuser" ]; then
 		echo "Entering $chroot as $chrootuser..."
-		#chroot "$chroot" su $chrootuser
-		#chroot "$chroot" su $chrootuser -l -c "env PS1='$chrootPS1' $SHELL"
-		chroot "$chroot" su $chrootuser -l -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $SHELL"
+		chroot "$chroot" su $chrootuser -l -s "$chrootshell" -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $chrootshell"
 	else
 		echo "Entering $chroot..."
-		#chroot "$chroot"
-		chroot "$chroot" env PS1="$chrootPS1root" $SHELL
+		chroot "$chroot" env PS1="$chrootPS1root" $chrootshell
 	fi
 }
 
-# HACK HACK HACK
-mount | grep /media/mmc1 >/dev/null || mount /dev/mmcblk1p1 /media/mmc1
-
+parse_args "$@"
+check_params
+become_root "$@"
 trap cleanup EXIT
 setup
 setup_user

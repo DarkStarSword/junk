@@ -69,7 +69,11 @@ become_root()
 {
 	if [ `id -u` != 0 ]; then
 		echo Becomming root...
-		sudo -E `readlink -f "$0"` "$@"
+		if ( sudo -E 2>&1 | grep 'illegal option' > /dev/null ); then
+			sudo `readlink -f "$0"` "$@"
+		else
+			sudo -E `readlink -f "$0"` "$@"
+		fi
 		exit
 	fi
 }

@@ -39,14 +39,14 @@ usage()
 
 parse_args()
 {
-	while getopts 'rs:' arg; do
-		case "$arg" in
-		r)  chrootsu=0 ;;
-		s)	chrootshell="$OPTARG";;
-		\?) usage;;
+	while [ $# -ge 1 ]; do
+		case "$1" in
+			'-r') chrootsu=0 ;;
+			'-s')	chrootshell="$2";shift;;
+			*) break
 		esac
+		shift
 	done
-	shift $(($OPTIND - 1))
 
 	if [ -n "$1" ]; then
 		chroot="$1"; shift

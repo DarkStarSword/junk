@@ -33,6 +33,16 @@ die()
 	exit 1
 }
 
+die_if_root()
+{
+	if [ `id -u` == 0 ]; then
+		die "$@"
+	else
+		warn "$@"
+		echo "Continuing anyway in case of a false-negative caused by insufficient permissions since we aren't root yet..."
+	fi
+}
+
 usage()
 {
 	echo "Usage: $0 [-r] [-s shell] [chroot]"
@@ -61,8 +71,8 @@ check_params()
 {
 	[ -z "$chroot" ] && die No chroot specified
 	[ "`readlink -f "$chroot"`" = "/" ] && die Attempted to chroot to /
-	[ -d "$chroot" ] || die chroot target is not a directory
-	[ -x "$chroot$chrootshell" ] || die "$chrootshell not found or not executable inside chroot, aborting"
+	[ -d "$chroot" ] || die_if_root chroot target is not a directory
+	[ -x "$chroot$chrootshell" ] || die_if_root "$chrootshell not found or not executable inside chroot"
 }
 
 become_root()

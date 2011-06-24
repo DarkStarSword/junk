@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <string.h>
 #include <libgen.h>
+#include <assert.h>
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -22,16 +23,38 @@ u64 global_error_count = 0;
 unsigned int BLOCK_SIZE = 0;
 u8 *buf_g; /* Generated */
 u8 *buf_f; /* File */
+#define RAND_BLOCK_SIZE 4*1024 /* Data is seeded every 4K to be block size agnostic */
 
-void genranddata(u64 pos, unsigned int seed)
+void _genranddata(u64 pos, u64 off, unsigned int seed)
 {
 	unsigned int seed_short = (pos >> 32) ^ (pos & 0xffffffff) ^ seed;
 	unsigned int i;
+	int tmp;
+
+	assert(RAND_MAX > 1<<16); /* Assert that rand() gives us at least 2
+				     bytes of random data (typically 31 bits,
+				     but just using 16 simplifies the below
+				     loop). The compiler should optimise this
+				     out. */
 
 	srand(seed_short); rand(); rand();
 
-	for (i=0; i<BLOCK_SIZE; i++)
-		buf_g[i] = rand();
+	for (i=0; i < RAND_BLOCK_SIZE; i+=2) {
+		tmp = rand();
+		buf_g[off+i  ] = (tmp & 0x000000ff)      ;
+		buf_g[off+i+1] = (tmp & 0x0000ff00) >>  8;
+	}
+}
+
+void genranddata(u64 pos, unsigned int seed)
+{
+	u64 off;
+
+	assert(pos % RAND_BLOCK_SIZE == 0);
+	assert(BLOCK_SIZE % RAND_BLOCK_SIZE == 0);
+
+	for (off=0; off < BLOCK_SIZE; off += RAND_BLOCK_SIZE)
+		_genranddata(pos+off, off, seed);
 }
 
 static void verifyblock(u64 pos, unsigned int seed, unsigned int size)

@@ -28,21 +28,26 @@ u8 *buf_f; /* File */
 void _genranddata(u64 pos, u64 off, unsigned int seed)
 {
 	unsigned int seed_short = (pos >> 32) ^ (pos & 0xffffffff) ^ seed;
-	unsigned int i;
-	int tmp;
+	unsigned int i,j;
+	u32 tmp1, tmp2;
 
-	assert(RAND_MAX > 1<<16); /* Assert that rand() gives us at least 2
-				     bytes of random data (typically 31 bits,
-				     but just using 16 simplifies the below
-				     loop). The compiler should optimise this
-				     out. */
+	assert(RAND_MAX >= 31); /* Assert that rand() still gives us the amount
+				   of random bits we rely on below. */
+	assert(RAND_BLOCK_SIZE % 4 == 0);
 
 	srand(seed_short); rand(); rand();
 
-	for (i=0; i < RAND_BLOCK_SIZE; i+=2) {
-		tmp = rand();
-		buf_g[off+i  ] = (tmp & 0x000000ff)      ;
-		buf_g[off+i+1] = (tmp & 0x0000ff00) >>  8;
+	for (i=0; i < RAND_BLOCK_SIZE;) {
+		tmp2 = rand();
+		for (j=1; i < RAND_BLOCK_SIZE && j < 32; j++) {
+			tmp1 = rand();
+			buf_g[off + i++] = (tmp1 & 0x000000ff)      ;
+			buf_g[off + i++] = (tmp1 & 0x0000ff00) >>  8;
+			buf_g[off + i++] = (tmp1 & 0x00ff0000) >> 16;
+			/* We don't quite have 4 bytes of random data in tmp1,
+			 * so get the high bit from tmp2: */
+			buf_g[off + i++] = ((tmp1 & 0x7f000000) | ((tmp2 << j) & 0x80000000)) >> 24;
+		}
 	}
 }
 

@@ -59,13 +59,13 @@ struct showstatus_state
 	u64 last_pos;
 };
 
-static void showstatus_init(struct showstatus_state *stat)
+static void showstatus_init(struct showstatus_state *stat, u64 pos)
 {
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 	stat->last_usec = tv.tv_sec*1000000 + tv.tv_usec;
-	stat->last_pos = 0;
+	stat->last_pos = pos;
 }
 
 static void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
@@ -97,15 +97,22 @@ static void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 	}
 }
 
-u64 writedata(char *file, unsigned int seed)
+u64 writedata(char *file, u64 start, unsigned int seed)
 {
 	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
-	u64 pos = 0;
+	u64 pos = start;
 	ssize_t count;
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat);
+	showstatus_init(&stat, pos);
+
+	if (pos) {
+		if (lseek64(fp, pos, SEEK_SET) != pos) {
+			perror("[1;31mFailed to lseek64[0m");
+			return 0;
+		}
+	}
 
 	while (1) {
 		genranddata(pos, seed);
@@ -132,18 +139,25 @@ out:
 	printf("\n");
 	fsync(fp);
 	close(fp);
-	return pos;
+	return pos-start;
 }
 
-u64 verifydata(char *file, unsigned int seed)
+u64 verifydata(char *file, u64 start, unsigned int seed)
 {
 	int fp = open(file, O_RDONLY | O_LARGEFILE);
-	u64 pos = 0, startpos;
+	u64 pos = start, startpos;
 	ssize_t count;
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat);
+	showstatus_init(&stat, pos);
+
+	if (pos) {
+		if (lseek64(fp, pos, SEEK_SET) != pos) {
+			perror("[1;31mFailed to lseek64[0m");
+			return 0;
+		}
+	}
 
 	while (1) {
 		startpos = pos;
@@ -172,7 +186,7 @@ out:
 	printf("\n");
 	fsync(fp);
 	close(fp);
-	return pos;
+	return pos-start;
 }
 
 void _alloc_bufs(unsigned int size) {
@@ -227,27 +241,32 @@ def_bs:
 int main(int argc, char *argv[])
 {
 	unsigned int seed = 0xDEBAC1E;
-	u64 written, read;
+	u64 written, read, start = 0;
 	char *filename;
 	int readonly;
 
-	if (argc < 2) {
-		printf("Usage: %s device [readonly]\nWARNING - all data on device will be destroyed!\n", argv[0]);
+	if (argc < 2 || argc > 4) {
+		printf("Usage: %s device [ start [ readonly ]]\nWARNING - all data on device will be destroyed!\n", argv[0]);
 		return 1;
 	}
 	filename = argv[1];
-	readonly = argc > 2;
+	alloc_bufs(filename); /* BLOCK_SIZE set here */
 
-	alloc_bufs(filename);
+	if (argc > 2) {
+		sscanf(argv[2], "%llx", &start);
+		start = start - start % BLOCK_SIZE;
+	}
+	printf("Starting at %#llx\n", start);
+	readonly = argc > 3;
 
 	if (!readonly) {
-		written = writedata(argv[1], seed);
+		written = writedata(argv[1], start, seed);
 		printf("\x1b[36m%llu bytes written to %s, verifying...\x1b[0m\n", written, filename);
 	}
 
 	sync();
 
-	read = verifydata(argv[1], seed);
+	read = verifydata(argv[1], start, seed);
 	printf("\x1b[36m%llu bytes read from %s.\x1b[0m\n", read, filename);
 
 	if (!readonly && written != read) {
@@ -260,6 +279,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf("\x1b[1;32m\nNo Errors Detected :-)\x1b[0m\n");
+	if (read)
+		printf("\x1b[1;32m\nNo Errors Detected :-)\x1b[0m\n");
 	return 0;
 }

@@ -30,13 +30,13 @@ struct showstatus_state
 	u64 last_pos;
 };
 
-static void showstatus_init(struct showstatus_state *stat)
+static void showstatus_init(struct showstatus_state *stat, u64 pos)
 {
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 	stat->last_usec = tv.tv_sec*1000000 + tv.tv_usec;
-	stat->last_pos = 0;
+	stat->last_pos = pos;
 }
 
 static void showstatus_timed(u64 pos, struct showstatus_state *stat)
@@ -68,14 +68,21 @@ static void showstatus_timed(u64 pos, struct showstatus_state *stat)
 	}
 }
 
-u64 writedata(char *file, unsigned int seed)
+u64 writedata(char *file, u64 start)
 {
 	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
-	u64 pos = 0;
+	u64 pos = start;
 	ssize_t count;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat);
+	showstatus_init(&stat, pos);
+
+	if (pos) {
+		if (lseek64(fp, pos, SEEK_SET) != pos) {
+			perror("[1;31mFailed to lseek64[0m");
+			return 0;
+		}
+	}
 
 	while (1) {
 		count = write(fp, buf, BLOCK_SIZE);
@@ -94,7 +101,7 @@ out:
 	printf("\n");
 	fsync(fp);
 	close(fp);
-	return pos;
+	return pos - start;
 }
 
 void _alloc_bufs(unsigned int size) {
@@ -147,21 +154,24 @@ def_bs:
 
 int main(int argc, char *argv[])
 {
-	unsigned int seed = 0xDEBAC1E;
-	u64 written;
+	u64 written, start = 0;
 	char *filename;
 
-	if (argc < 2) {
-		printf("Usage: %s device\nWARNING - all data on device will be destroyed!\n", argv[0]);
+	if (argc < 2 || argc > 3) {
+		printf("Usage: %s device [start]\nWARNING - all data on device will be destroyed!\n", argv[0]);
 		return 1;
 	}
 	filename = argv[1];
-
-	alloc_bufs(filename);
+	alloc_bufs(filename); /* BLOCK_SIZE set here */
+	if (argc > 2) {
+		sscanf(argv[2], "%llx", &start);
+		start = start - start % BLOCK_SIZE;
+	}
+	printf("Starting at %#llx\n", start);
 
 	memset(buf, 0xff, BLOCK_SIZE);
 
-	written = writedata(argv[1], seed);
+	written = writedata(argv[1], start);
 	printf("\x1b[36m%llu bytes written to %s.\x1b[0m\n", written, filename);
 
 	sync();

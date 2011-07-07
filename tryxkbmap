@@ -1,0 +1,74 @@
+#!/bin/sh
+
+warn()
+{
+	echo "[1;33m$@[0m"
+}
+
+die()
+{
+	echo "[1;31m$@[0m"
+	exit 1
+}
+
+become_root()
+{
+	if [ `id -u` != 0 ]; then
+		echo Becomming root...
+		if ( sudo -E 2>&1 | grep 'illegal option' > /dev/null ); then
+			sudo `readlink -f "$0"` "$@"
+		else
+			sudo -E `readlink -f "$0"` "$@"
+		fi
+		exit
+	fi
+}
+
+cleanup()
+{
+	trap '' INT TERM HUP QUIT # Ignore while cleaning up
+	trap - EXIT # Prevent reentrance if this is SIGINT, etc
+	echo "cleaning up..."
+	set -x
+	cp -f "$tmp" "$kbmap" || die "failed to restore original keyboard map $tmp"
+	setxkbmap || die "ERROR RESTORING KEYBOARD MAP! DO NOT REBOOT UNTIL THIS HAS BEEN RESOLVED!"
+	rm -f "$tmp"
+
+	exit 2 # becaus I caught INT
+}
+
+if [ "$1" = "-i" ]; then
+	install='-i'
+	shift
+fi
+
+file=$(readlink -f $1)
+[ -f "$file" ] || die give me a file
+
+kbmap="/usr/share/X11/xkb/symbols/nokia_vndr/rx-51"
+
+become_root $install "$file"
+
+tmp=$(mktemp /tmp/tryxkbmap.XXXXXX)
+cp -f "$kbmap" "$tmp" || die unable to backup keyboard map
+
+# I dunno wtf is going on, but cleanup from EXIT when the script was ctrl+Cd
+# can only run built in commands, set -x shows external commands, but they are
+# NOT run. If the script terminates normally it works, I don't know about
+# TERM, QUIT, etc so I'll assume the worst
+#trap cleanup EXIT
+trap cleanup EXIT INT TERM HUP QUIT
+
+md5sum "$kbmap"
+cp -f "$file" "$kbmap" || die unable to install new keyboard map
+
+setxkbmap || die "Problem with new keyboard map"
+
+if [ "$install" = "-i" ]; then
+	echo "Keyboard map installed. Old map in $tmp"
+	trap - EXIT
+else
+	cp -f "$tmp" "$kbmap" || die "failed to restore original keyboard map $tmp"
+	echo "Keyoard map installed, sleeping for 30 seconds while you try it..."
+	sleep 30
+fi

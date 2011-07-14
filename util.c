@@ -9,6 +9,19 @@
 
 #include "util.h"
 
+static char *human_sizes[] = {"B", "KB", "MB", "GB", "TB"};
+static int human_sizes_len = 5;
+
+static double human_size(double size, char **units)
+{
+	int idx = 0;
+
+	for (; size >= 1024.0 && idx < human_sizes_len; idx++, size /= 1024.0);
+
+	*units = human_sizes[idx];
+	return size;
+}
+
 void showstatus(u64 pos)
 {
 	printf("%#.8llx...\r", pos);
@@ -28,7 +41,8 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 	struct timeval tv;
 	u64 usec, delta, bytes;
 	double rate;
-	char *units = "B";
+	char *units, *pos_units;
+	double hpos = (human_size(pos, &pos_units));
 
 	gettimeofday(&tv, NULL);
 	usec = tv.tv_sec*1000000 + tv.tv_usec;
@@ -36,16 +50,8 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 
 	if (delta >= 1000000) {
 		bytes = pos - stat->last_pos;
-		rate = (double)bytes / ((double)delta/1000000.0);
-		if (rate >= 1024) {
-			rate /= 1024.0;
-			units = "KB";
-		}
-		if (rate >= 1024) {
-			rate /= 1024.0;
-			units = "MB";
-		}
-		printf("%s%#.8llx @ %f %s/Sec...\n", msg, pos, rate, units);
+		rate = human_size((double)bytes / ((double)delta/1000000.0), &units);
+		printf("%s%#.8llx (%.2f %s) @ %f %s/Sec...\n", msg, pos, hpos, pos_units, rate, units);
 
 		stat->last_usec = usec;
 		stat->last_pos = pos;

@@ -1,3 +1,5 @@
+#define _LARGEFILE64_SOURCE
+
 #include <stdio.h>
 #include <sys/time.h>
 #include <libgen.h>
@@ -6,6 +8,8 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
 
 #include "util.h"
 
@@ -22,18 +26,42 @@ static double human_size(double size, char **units)
 	return size;
 }
 
+u64 dev_size(char *filename)
+{
+	struct stat st;
+	u64 ret = 0;
+	int fd = open(filename, O_RDONLY | O_LARGEFILE);
+	if (fd == -1)
+		return 0;
+
+	fstat(fd, &st);
+	if (st.st_size) {
+		ret = st.st_size;
+		goto out;
+	}
+
+	/* FIXME: Make sure this is a block device */
+	ioctl(fd, BLKGETSIZE64, &ret);
+
+out:
+	close(fd);
+	return ret;
+}
+
 void showstatus(u64 pos)
 {
 	printf("%#.8llx...\r", pos);
 }
 
-void showstatus_init(struct showstatus_state *stat, u64 pos)
+void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size)
 {
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
 	stat->last_usec = tv.tv_sec*1000000 + tv.tv_usec;
 	stat->last_pos = pos;
+	stat->size = size;
+	stat->size_human = human_size(size, &stat->size_units);
 }
 
 void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
@@ -51,8 +79,16 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 	if (delta >= 1000000) {
 		bytes = pos - stat->last_pos;
 		rate = human_size((double)bytes / ((double)delta/1000000.0), &units);
-		printf("%s%#.8llx (%.2f %s) @ %f %s/Sec...\n", msg, pos, hpos, pos_units, rate, units);
-
+		if (stat->size) {
+			printf("%s%#.8llx (%.2f %s / %.2f %s %.2f%%) @ %f %s/Sec...\n", msg, pos,
+					   hpos, pos_units,
+					   stat->size_human, stat->size_units,
+					   (double)pos / stat->size * 100.0,
+					   rate, units);
+		} else {
+			printf("%s%#.8llx (%.2f %s) @ %f %s/Sec...\n", msg, pos,
+					   hpos, pos_units, rate, units);
+		}
 		stat->last_usec = usec;
 		stat->last_pos = pos;
 	}

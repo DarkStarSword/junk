@@ -19,10 +19,11 @@ u64 writedata(char *file, u64 start)
 {
 	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
 	u64 pos = start;
+	u64 size = dev_size(file);
 	ssize_t count;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos);
+	showstatus_init(&stat, pos, size);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {
@@ -31,8 +32,11 @@ u64 writedata(char *file, u64 start)
 		}
 	}
 
-	while (1) {
-		count = write(fp, buf, BLOCK_SIZE);
+	while (!size || pos < size) {
+		if (!size || size - pos >= BLOCK_SIZE)
+			count = write(fp, buf, BLOCK_SIZE);
+		else
+			count = write(fp, buf, size - pos);
 		if (count == -1) {
 			if (errno != ENOSPC)
 				perror("write");

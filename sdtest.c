@@ -70,7 +70,7 @@ static void verifyblock(u64 pos, unsigned int seed, unsigned int size)
 	}
 }
 
-u64 writedata(char *file, u64 start, unsigned int seed)
+static u64 writedata(char *file, u64 start, u64 size, unsigned int seed)
 {
 	int fp = open(file, O_WRONLY | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
 	u64 pos = start;
@@ -78,7 +78,7 @@ u64 writedata(char *file, u64 start, unsigned int seed)
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos);
+	showstatus_init(&stat, pos, size);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {
@@ -115,7 +115,7 @@ out:
 	return pos-start;
 }
 
-u64 verifydata(char *file, u64 start, unsigned int seed)
+static u64 verifydata(char *file, u64 start, u64 size, unsigned int seed)
 {
 	int fp = open(file, O_RDONLY | O_LARGEFILE);
 	u64 pos = start, startpos;
@@ -123,7 +123,7 @@ u64 verifydata(char *file, u64 start, unsigned int seed)
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos);
+	showstatus_init(&stat, pos, size);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {
@@ -176,7 +176,7 @@ void alloc_bufs(unsigned int size) {
 int main(int argc, char *argv[])
 {
 	unsigned int seed = 0xDEBAC1E;
-	u64 written, read, start = 0;
+	u64 written, read, start = 0, size = 0, expected_len = 0;
 	char *filename;
 	int readonly;
 
@@ -194,18 +194,30 @@ int main(int argc, char *argv[])
 	printf("Starting at %#llx\n", start);
 	readonly = argc > 3;
 
+	size = dev_size(filename);
+	if (size)
+		expected_len = size - start;
+
 	if (!readonly) {
-		written = writedata(argv[1], start, seed);
+		written = writedata(argv[1], start, size, seed);
 		printf("\x1b[36m%llu bytes written to %s, verifying...\x1b[0m\n", written, filename);
+		if (expected_len && written != expected_len) {
+			printf("\x1b[1;31mSIZE MISMATCH: wrote %llu bytes, but expected to write %llu bytes!\x1b[0m\n",
+			       written, expected_len);
+			global_error_count++;
+		}
 	}
 
 	sync();
 
-	read = verifydata(argv[1], start, seed);
+	read = verifydata(argv[1], start, size, seed);
 	printf("\x1b[36m%llu bytes read from %s.\x1b[0m\n", read, filename);
 
 	if (!readonly && written != read) {
 		printf("\x1b[1;31mSIZE MISMATCH: wrote %llu bytes, but read back %llu bytes!\x1b[0m\n", written, read);
+		global_error_count++;
+	} else if (expected_len && read != expected_len) {
+		printf("\x1b[1;31mSIZE MISMATCH: read %llu bytes, but expected to read %llu bytes!\x1b[0m\n", read, expected_len);
 		global_error_count++;
 	}
 

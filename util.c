@@ -1,3 +1,7 @@
+/*
+vi:noexpandtab:ts=2:sw=2
+*/
+
 #define _LARGEFILE64_SOURCE
 
 #include <stdio.h>

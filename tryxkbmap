@@ -1,4 +1,5 @@
 #!/bin/sh
+# vi:sw=2:ts=2:noexpandtab:nowrap
 
 warn()
 {

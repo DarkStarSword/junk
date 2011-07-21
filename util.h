@@ -1,3 +1,7 @@
+/*
+vi:noexpandtab:ts=2:sw=2
+*/
+
 #ifndef _UTIL_H
 #define _UTIL_H
 

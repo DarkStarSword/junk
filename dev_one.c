@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	filename = argv[1];
 	alloc_bufs(sd_erase_size(filename)); /* BLOCK_SIZE set here */
 	if (argc > 2) {
-		sscanf(argv[2], "%llx", &start);
+		start = interpret_number(argv[2]);
 		start = start - start % BLOCK_SIZE;
 	}
 	printf("Starting at %#llx\n", start);

@@ -14,6 +14,8 @@ vi:noexpandtab:ts=2:sw=2
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/fs.h>
+#include <regex.h>
+#include <stdlib.h>
 
 #include "util.h"
 
@@ -28,6 +30,102 @@ static double human_size(double size, char **units)
 
 	*units = human_sizes[idx];
 	return size;
+}
+
+/*
+ * Note: Does not handle negatives or floating point numbers.
+ *
+ * The exception is filesizes where (e.g.) 3.2GB will be translated into
+ * integer bytes.
+ */
+u64 interpret_number(char *string)
+{
+	int rc;
+	u64 ret;
+	regex_t preg;
+	const int nmatch = 8;
+	regmatch_t pmatch[nmatch];
+	double val;
+
+	/* Filesize */
+	rc = regcomp(&preg, "^([1-9][0-9]*(.[0-9]+)?|0(.[0-9]+)?) ?(B|KB|MB|GB|TB)$", REG_EXTENDED);
+	/* Match groups:
+	 * 0: Entire string
+	 * 1: Numeric value
+	 * 2/3: Ignore (Indicates value is floating point)
+	 * 4: Units
+	 */
+	if (rc)
+		goto err;
+	rc = regexec(&preg, string, nmatch, pmatch, 0);
+	regfree(&preg);
+	if (!rc) {
+		u64 mult = 1;
+		switch (string[pmatch[4].rm_so]) {
+			/* Exploit the C fall-through goodness */
+			case 'T': mult *= 1024;
+			case 'G': mult *= 1024;
+			case 'M': mult *= 1024;
+			case 'K': mult *= 1024;
+			case 'B': break;
+			default:
+				printf("ERR: Unrecognised filesize unit\n");
+		}
+
+		/* Add null terminator after numeric value */
+		string[pmatch[1].rm_eo] = 0;
+
+		sscanf(string, "%lf", &val);
+		return val * mult;
+	}
+
+	/* Hex */
+	rc = regcomp(&preg, "^0x[0-9a-fA-F]+$", REG_EXTENDED);
+	if (rc)
+		goto err;
+	rc = regexec(&preg, string, nmatch, pmatch, 0);
+	regfree(&preg);
+	if (!rc) {
+		sscanf(string, "%llx", &ret);
+		return ret;
+	}
+
+	/* Octal */
+	rc = regcomp(&preg, "^0[0-7]+$", REG_EXTENDED);
+	if (rc)
+		goto err;
+	rc = regexec(&preg, string, nmatch, pmatch, 0);
+	regfree(&preg);
+	if (!rc) {
+		sscanf(string, "%llo", &ret);
+		return ret;
+	}
+
+	/* Decimal */
+	rc = regcomp(&preg, "^([1-9][0-9]*|0)$", REG_EXTENDED);
+	if (rc)
+		goto err;
+	rc = regexec(&preg, string, nmatch, pmatch, 0);
+	regfree(&preg);
+	if (!rc) {
+		sscanf(string, "%llu", &ret);
+		return ret;
+	}
+
+	return 0;
+
+err:
+	{
+		int errbuf_size;
+		char *errbuf;
+
+		errbuf_size = regerror(rc, &preg, NULL, 0);
+		errbuf = malloc(errbuf_size);
+		regerror(rc, &preg, errbuf, errbuf_size);
+		printf("regex error: %s\n", errbuf);
+		free(errbuf);
+		return 0;
+	}
 }
 
 u64 dev_size(char *filename)

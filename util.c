@@ -22,7 +22,7 @@ vi:noexpandtab:ts=2:sw=2
 static char *human_sizes[] = {"B", "KB", "MB", "GB", "TB"};
 static int human_sizes_len = 5;
 
-static double human_size(double size, char **units)
+double human_size(double size, char **units)
 {
 	int idx = 0;
 

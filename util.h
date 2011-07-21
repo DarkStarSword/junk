@@ -30,6 +30,7 @@ unsigned int sd_erase_size(char *filename);
 
 u64 dev_size(char *filename);
 
+double human_size(double size, char **units);
 u64 interpret_number(char *val);
 
 #endif

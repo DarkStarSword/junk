@@ -181,6 +181,8 @@ int main(int argc, char *argv[])
 {
 	unsigned int seed = 0xDEBAC1E;
 	u64 written, read, start = 0, size = 0, expected_len = 0;
+	double start_human;
+	char *start_units;
 	char *filename;
 	int readonly;
 
@@ -195,7 +197,8 @@ int main(int argc, char *argv[])
 		start = interpret_number(argv[2]);
 		start = start - start % BLOCK_SIZE;
 	}
-	printf("Starting at %#llx\n", start);
+	start_human = human_size(start, &start_units);
+	printf("Starting at %#llx (%.2f %s)\n", start, start_human, start_units);
 	readonly = argc > 3;
 
 	size = dev_size(filename);

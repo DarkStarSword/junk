@@ -72,6 +72,8 @@ void alloc_bufs(unsigned int size) {
 int main(int argc, char *argv[])
 {
 	u64 written, start = 0;
+	double start_human;
+	char *start_units;
 	char *filename;
 
 	if (argc < 2 || argc > 3) {
@@ -84,7 +86,8 @@ int main(int argc, char *argv[])
 		start = interpret_number(argv[2]);
 		start = start - start % BLOCK_SIZE;
 	}
-	printf("Starting at %#llx\n", start);
+	start_human = human_size(start, &start_units);
+	printf("Starting at %#llx (%.2f %s)\n", start, start_human, start_units);
 
 	memset(buf, 0xff, BLOCK_SIZE);
 

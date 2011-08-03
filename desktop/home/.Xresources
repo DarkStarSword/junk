@@ -1,0 +1,15 @@
+/* This seemed to get cleared when manually running xrdb ~/.Xresources: */
+*customization: -color
+
+ XTerm*.savelines:	10000
+UXTerm*.savelines:	10000
+
+ XTerm*.background:	MidnightBlue
+UXTerm*.background:	MidnightBlue
+ XTerm*.foreground:	Gold
+UXTerm*.foreground:	Gold
+
+ XTerm*.translations:	#override \n\
+			Shift Ctrl <Key>Return:	spawn-new-terminal()
+UXTerm*.translations:	#override \n\
+			Shift Ctrl <Key>Return:	spawn-new-terminal()

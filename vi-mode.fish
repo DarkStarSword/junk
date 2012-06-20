@@ -39,8 +39,33 @@ print new_pos
 end
 
 function vi_mode_common -d "common key bindings for all vi-like modes"
-	bind \cc 'echo; commandline ""; vi_mode_normal' # Breaks if multiline commandline
+	bind \e vi_mode_normal
+	bind \cc 'echo; commandline ""; vi_mode_insert' # Breaks if multiline commandline
 	bind \cd delete-or-exit
+end
+
+function replace
+	bind --erase --all
+	vi_mode_common
+
+	# Annoyingly, the pressed key does not seem to be passed to the called
+	# function (unless it is the builtin self-insert), so I need to bind
+	# each and every damn key I'm interested in:
+	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
+		bind "$char" "commandline -f delete-char; commandline -i '$char'; vi_mode_normal"
+	end
+end
+
+function overwrite
+	bind --erase --all
+	vi_mode_common
+
+	# Can someone please explain why this doesn't work, yet the almost
+	# identical replace function does? Why does returning to normal mode
+	# allow delete-char to work?
+	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
+		bind "$char" "commandline -f delete-char; commandline -i '$char'"
+	end
 end
 
 function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
@@ -78,14 +103,14 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind C 'commandline -f kill-line; vi_mode_insert'
 	bind S 'commandline -f kill-whole-line; vi_mode_insert'
 	bind s 'commandline -f delete-char; vi_mode_insert'
+	bind r replace
+	bind R overwrite
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit
 	# bind d delete-direction
 	# bind c change-direction
 	# bind y yank-direction
-	# bind r replace
-	# bind R overwrite
 	# bind g magic :-P
 	# bind u undo
 	# bind f find
@@ -104,6 +129,4 @@ function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
 	fish_default_key_bindings
 
 	vi_mode_common
-
-	bind \e vi_mode_normal
 end

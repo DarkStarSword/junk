@@ -16,9 +16,9 @@ function move-full-word
 	# Embedded python... If you can do this in pure shell then more power to you :)
 	commandline -C (python -c "
 full_cmdline = '$full_cmdline'
-part_cmdline = '$part_cmdline'[:-1]
+part_cmdline = '$part_cmdline'
 real_pos = int('$pos')
-stupid_pos = 0 if real_pos == 0 else len(part_cmdline) + 1
+stupid_pos = len(part_cmdline)
 
 if '$direction' == 'next':
 	new_pos = full_cmdline.find(' ', stupid_pos + 1)
@@ -31,7 +31,7 @@ if '$direction' == 'end':
 		new_pos = len(full_cmdline)
 	new_pos = real_pos - stupid_pos + new_pos - 1
 elif '$direction' == 'back':
-	new_pos = real_pos - stupid_pos + part_cmdline.rfind(' ') + 1
+	new_pos = real_pos - stupid_pos + part_cmdline.rfind(' ', 0, stupid_pos-1) + 1
 	if new_pos < 0:
 		new_pos = 0
 print new_pos

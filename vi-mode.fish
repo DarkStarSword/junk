@@ -77,12 +77,12 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind p 'commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
 	bind C 'commandline -f kill-line; vi_mode_insert'
 	bind S 'commandline -f kill-whole-line; vi_mode_insert'
+	bind s 'commandline -f delete-char; vi_mode_insert'
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit
 	# bind d delete-direction
 	# bind c change-direction
-	# bind s substitude-direction
 	# bind y yank-direction
 	# bind r replace
 	# bind R overwrite

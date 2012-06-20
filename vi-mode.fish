@@ -250,5 +250,3 @@ function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
 
 	bind \e vi_mode_normal
 end
-
-set -U fish_key_bindings vi_mode_insert

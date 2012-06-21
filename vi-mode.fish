@@ -42,34 +42,98 @@ function vi_mode_common -d "common key bindings for all vi-like modes"
 	bind \e vi_mode_normal
 	bind \cc 'echo; commandline ""; vi_mode_insert' # Breaks if multiline commandline
 	bind \cd delete-or-exit
+	bind \cl 'clear; commandline -f repaint'
+end
+
+function bind_all_shell
+	# NOTE: This is slow - the full python implementation below is noticably faster
+
+	# There seems to be some magic that doesn't work properly without this:
+	bind '' self-insert
+
+	# Embedded python - I was running into issues trying to do this loop in pure shell
+	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
+		switch $char
+			case \\
+				set rchar "\\\\\\$char"
+			case '&' '/' '.' '"' '{' '}' ';' ' ' '#' '$' '%' '^' '(' ')' '|' '<' '>'
+				set rchar "'\\$char'"
+			case '\n'
+				set rchar '\\n'
+			case '*'
+				set rchar $char
+				# I can't seem to figure out the right escaping for these above:
+				if [ "$char" == "*" ]
+					set rchar "'*'"
+				end
+				if [ "$char" == "?" ]
+					set rchar "'?'"
+				end
+				if [ "$char" == "'" ]
+					set rchar \"\'\"
+				end
+		end
+		bind "$char" (echo $argv | sed "s/%k/$rchar/g")
+	end
+end
+
+function bind_all
+	# There seems to be some magic that doesn't work properly without this:
+	bind '' self-insert
+
+	python -c "
+command = '''$argv'''
+for c in map(chr, range(0x20, 0x7f)):
+	q = '\"'
+	if c == '\"':
+		l = r = r'\\%s' % c
+		q = '\''
+	elif c in ['(', ')', '<', '>', ';', '|', '\'']:
+		l = r = r'\%s' % c
+	elif c == '\\\\':
+		l = r'\\\\'
+		r = r'\\\\\\\\'
+	elif c == '\$':
+		l = '\%s' % c
+		r = r\"'\%s'\" % c
+	else:
+		l = r = \"'%s'\" % c
+	print '''bind %s %s%s%s''' % (l, q, command.replace('%k', r), q)
+" | .
+end
+
+function vi_mode
+	set -g vi_mode $argv
+	commandline -f repaint
 end
 
 function replace
+	vi_mode 'r'
 	bind --erase --all
 	vi_mode_common
 
-	# Annoyingly, the pressed key does not seem to be passed to the called
-	# function (unless it is the builtin self-insert), so I need to bind
-	# each and every damn key I'm interested in:
-	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
-		bind "$char" "commandline -f delete-char; commandline -i '$char'; vi_mode_normal"
-	end
+	bind_all "commandline -f delete-char; commandline -i %k; vi_mode_normal"
+
 end
 
 function overwrite
+	vi_mode 'R'
 	bind --erase --all
 	vi_mode_common
 
-	# Can someone please explain why this doesn't work, yet the almost
-	# identical replace function does? Why does returning to normal mode
-	# allow delete-char to work?
-	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
-		bind "$char" "commandline -f delete-char; commandline -i '$char'"
-	end
+	bind_all "commandline -f delete-char; commandline -i %k"
 end
 
 function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
+	vi_mode ' '
+
 	bind --erase --all
+
+	# NOTE: bind '' self-insert seems to be required to allow the
+	# prompt to change, but we don't want unbound keys to be able to
+	# self-insert, so set the default binding, but bind everything to
+	# do nothing (which is wasteful, but seems to work):
+	bind_all ''
 
 	vi_mode_common
 
@@ -126,6 +190,8 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 end
 
 function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
+	vi_mode 'I'
+
 	fish_default_key_bindings
 
 	vi_mode_common

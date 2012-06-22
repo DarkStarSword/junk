@@ -8,20 +8,29 @@ direction = sys.argv[2]
 new_pos = pos = int(sys.argv[3])
 cmdline = '\n'.join(sys.argv[4:])
 
-if direction == 'W':
+def dir_W():
 	new_pos = cmdline.find(' ', pos + 1)
 	if new_pos < 0:
 		new_pos = len(cmdline)
-	new_pos = new_pos + 1
-if direction == 'E':
+	return new_pos + 1
+
+def dir_E():
 	new_pos = cmdline.find(' ', pos + 3)
 	if new_pos < 0:
 		new_pos = len(cmdline)
-	new_pos = new_pos - 1
-elif direction == 'B' and pos > 0:
+	return new_pos - 1
+
+def dir_B():
+	if pos == 0:
+		return 0
 	new_pos = cmdline.rfind(' ', 0, pos-1) + 1
 	if new_pos < 0:
 		new_pos = 0
+	return new_pos
+
+def dir(d): return globals()['dir_%s' % d]()
+
+new_pos = dir(direction)
 
 print cmdline
 print new_pos

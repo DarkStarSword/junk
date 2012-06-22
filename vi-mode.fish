@@ -12,25 +12,43 @@ def dir_W():
 	new_pos = cmdline.find(' ', pos + 1)
 	if new_pos < 0:
 		new_pos = len(cmdline)
-	return new_pos + 1
+	return (new_pos + 1, 0)
 
 def dir_E():
 	new_pos = cmdline.find(' ', pos + 3)
 	if new_pos < 0:
 		new_pos = len(cmdline)
-	return new_pos - 1
+	return (new_pos, -1)
 
 def dir_B():
 	if pos == 0:
-		return 0
+		return (0, 0)
 	new_pos = cmdline.rfind(' ', 0, pos-1) + 1
 	if new_pos < 0:
 		new_pos = 0
+	return (new_pos, 0)
+
+def cmd_d():
+	dst_pos = dir(direction)
+	if dst_pos >= pos:
+		new_cmdline = cmdline[:pos] + cmdline[dst_pos:]
+		return (new_cmdline, pos)
+	new_cmdline = cmdline[:dst_pos] + cmdline[pos:]
+	return (new_cmdline, dst_pos)
+cmd_c = cmd_d
+
+def dir(d, cursor = False):
+	(new_pos, cursor_off) = globals()['dir_%s' % d]()
+	if cursor:
+		return new_pos + cursor_off
 	return new_pos
 
-def dir(d): return globals()['dir_%s' % d]()
+def cmd(c): return globals()['cmd_%s' % c]()
 
-new_pos = dir(direction)
+if command == ' ':
+	new_pos = dir(direction, True)
+else:
+	(cmdline, new_pos) = cmd(command)
 
 print cmdline
 print new_pos
@@ -53,6 +71,14 @@ end
 function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
 	vi_mode_common
 	bind \e 'commandline -f backward-char; vi_mode_normal'
+end
+
+function bind_directions
+	vi_mode $argv[1]
+
+	for direction in W E B
+		bind $direction "direction_command '$argv[1]' $direction; $argv[2]"
+	end
 end
 
 function bind_all
@@ -132,11 +158,8 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind h backward-char
 	bind l forward-char
 	bind b backward-word # Note: this implementation is buggy. Try using b from the end of 'echo hi' to see what I mean
-	bind B 'direction_command "" B'
 	bind w forward-word # FIXME: Should be start of next word
-	bind W 'direction_command "" W'
 	bind e forward-word # FIXME: Should be end of next word
-	bind E 'direction_command "" E'
 	bind 0 beginning-of-line
 	bind _ beginning-of-line
 	bind \$ end-of-line
@@ -152,10 +175,12 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind r replace
 	bind R overwrite
 
+	bind_directions ' ' vi_mode_normal
+	bind d 'bind_directions d vi_mode_normal'
+	bind c 'bind_directions c vi_mode_insert'
+
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit
-	# bind d delete-direction
-	# bind c change-direction
 	# bind y yank-direction
 	# bind g magic :-P
 	# bind u undo

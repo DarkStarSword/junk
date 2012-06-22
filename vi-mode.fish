@@ -45,6 +45,11 @@ function vi_mode_common -d "common key bindings for all vi-like modes"
 	bind \cl 'clear; commandline -f repaint'
 end
 
+function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
+	vi_mode_common
+	bind \e 'commandline -f backward-char; vi_mode_normal'
+end
+
 function bind_all
 	# There seems to be some magic that doesn't work properly without this:
 	bind '' self-insert
@@ -80,14 +85,18 @@ function replace
 	bind --erase --all
 	vi_mode_common
 
-	bind_all "commandline -f delete-char; commandline -i %k; vi_mode_normal"
+	# backward-char should happen last, but only works if specified first
+	# (guess I should dig through the C code and figure out what is going
+	# on):
+	# bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; vi_mode_normal"
+	bind_all "commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
 
 end
 
 function overwrite
 	vi_mode 'R'
 	bind --erase --all
-	vi_mode_common
+	vi_mode_common_insert
 
 	bind_all "commandline -f delete-char; commandline -i %k"
 end
@@ -166,5 +175,5 @@ function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
 
 	fish_default_key_bindings
 
-	vi_mode_common
+	vi_mode_common_insert
 end

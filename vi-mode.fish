@@ -1,41 +1,37 @@
-function move-full-word
-	# FIXME: This is nasty
-	#
-	# No way to get unescaped commandline AFAICT, so commandline -C may not
-	# actually bear any relevance to commandline... fail.
-	#
-	# This is close to correct, but without being able to get the unescaped
-	# command line there will always be corner cases that will do the wrong
-	# thing, particularly where quotes are involved.
-
-	set direction $argv[1]
-	set full_cmdline (commandline)
-	set part_cmdline (commandline -c)
-	set pos (commandline -C)
-
+function direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
-	commandline -C (python -c "
-full_cmdline = '$full_cmdline'
-part_cmdline = '$part_cmdline'
-real_pos = int('$pos')
-stupid_pos = len(part_cmdline)
+	set ret (python -c "
 
-if '$direction' == 'next':
-	new_pos = full_cmdline.find(' ', stupid_pos + 1)
+import sys
+command = sys.argv[1]
+direction = sys.argv[2]
+new_pos = pos = int(sys.argv[3])
+cmdline = '\n'.join(sys.argv[4:])
+
+if direction == 'W':
+	new_pos = cmdline.find(' ', pos + 1)
 	if new_pos < 0:
-		new_pos = len(full_cmdline)
-	new_pos = real_pos - stupid_pos + new_pos + 1
-if '$direction' == 'end':
-	new_pos = full_cmdline.find(' ', stupid_pos + 3)
+		new_pos = len(cmdline)
+	new_pos = new_pos + 1
+if direction == 'E':
+	new_pos = cmdline.find(' ', pos + 3)
 	if new_pos < 0:
-		new_pos = len(full_cmdline)
-	new_pos = real_pos - stupid_pos + new_pos - 1
-elif '$direction' == 'back':
-	new_pos = real_pos - stupid_pos + part_cmdline.rfind(' ', 0, stupid_pos-1) + 1
+		new_pos = len(cmdline)
+	new_pos = new_pos - 1
+elif direction == 'B' and pos > 0:
+	new_pos = cmdline.rfind(' ', 0, pos-1) + 1
 	if new_pos < 0:
 		new_pos = 0
+
+print cmdline
 print new_pos
-	")
+
+" $argv[1] $argv[2] (commandline -C) (commandline)) # commandline should always be last
+
+	set new_pos $ret[-1]
+	set -e ret[-1] # Guessing that deleting last element is likely to be faster than deleting first
+	commandline $ret
+	commandline -C $new_pos
 end
 
 function vi_mode_common -d "common key bindings for all vi-like modes"
@@ -127,11 +123,11 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind h backward-char
 	bind l forward-char
 	bind b backward-word # Note: this implementation is buggy. Try using b from the end of 'echo hi' to see what I mean
-	bind B 'move-full-word back'
+	bind B 'direction_command "" B'
 	bind w forward-word # FIXME: Should be start of next word
-	bind W 'move-full-word next'
+	bind W 'direction_command "" W'
 	bind e forward-word # FIXME: Should be end of next word
-	bind E 'move-full-word end'
+	bind E 'direction_command "" E'
 	bind 0 beginning-of-line
 	bind _ beginning-of-line
 	bind \$ end-of-line

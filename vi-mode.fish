@@ -38,7 +38,7 @@ def _dir_e(regexp):
 	match = re.search(regexp, searchpart)
 	if not match:
 		return end()
-	return (pos+1 + match.start(), 0)
+	return (pos+2 + match.start(), -1)
 
 def _dir_b(regexp):
 	import re

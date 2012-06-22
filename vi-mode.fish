@@ -45,38 +45,6 @@ function vi_mode_common -d "common key bindings for all vi-like modes"
 	bind \cl 'clear; commandline -f repaint'
 end
 
-function bind_all_shell
-	# NOTE: This is slow - the full python implementation below is noticably faster
-
-	# There seems to be some magic that doesn't work properly without this:
-	bind '' self-insert
-
-	# Embedded python - I was running into issues trying to do this loop in pure shell
-	for char in (python -c "for c in range(0x20, 0x7f): print chr(c)")
-		switch $char
-			case \\
-				set rchar "\\\\\\$char"
-			case '&' '/' '.' '"' '{' '}' ';' ' ' '#' '$' '%' '^' '(' ')' '|' '<' '>'
-				set rchar "'\\$char'"
-			case '\n'
-				set rchar '\\n'
-			case '*'
-				set rchar $char
-				# I can't seem to figure out the right escaping for these above:
-				if [ "$char" == "*" ]
-					set rchar "'*'"
-				end
-				if [ "$char" == "?" ]
-					set rchar "'?'"
-				end
-				if [ "$char" == "'" ]
-					set rchar \"\'\"
-				end
-		end
-		bind "$char" (echo $argv | sed "s/%k/$rchar/g")
-	end
-end
-
 function bind_all
 	# There seems to be some magic that doesn't work properly without this:
 	bind '' self-insert
@@ -186,6 +154,10 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	# bind ^a increment next number
 	# bind ^a increment next number
 	# bind /?nN search (jk kind of does this)
+	# registers (maybe try to make sensible integration into X, like an
+	#   explicit yank with y goes to an X selection, while an implicit
+	#   delete with x etc. doesn't. "* and "+ should natually go to the
+	#   appropriate X selection if possible)
 	# etc.
 end
 

@@ -1,5 +1,9 @@
 function direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
+
+	# There may be some speedup to be gained by splitting this out into a
+	# separate script, which python can compile once instead of every time
+
 	set ret (python -c "
 
 import sys
@@ -8,25 +12,67 @@ direction = sys.argv[2]
 new_pos = pos = int(sys.argv[3])
 cmdline = '\n'.join(sys.argv[4:])
 
-def dir_W():
-	new_pos = cmdline.find(' ', pos + 1)
-	if new_pos < 0:
-		new_pos = len(cmdline)
-	return (new_pos + 1, 0)
+def start():
+	return (0, 0)
+def end():
+	return (len(cmdline), -1)
 
-def dir_E():
-	new_pos = cmdline.find(' ', pos + 3)
-	if new_pos < 0:
-		new_pos = len(cmdline)
-	return (new_pos, -1)
+dir_0 = dir__ = start # FIXME: start of line/first non-whitespace char in line, not entire cmdline
+dir_eol = end # FIXME: end of line, not entire cmdline
 
-def dir_B():
+# These three routines are similar, they can probably be combined into one, but
+# I'll make sure I get all working and understand the differences first
+def _dir_w(regexp):
+	import re
+
+	searchpart = cmdline[pos:]
+	match = re.search(regexp, searchpart)
+	if not match:
+		return end()
+	return (pos + match.end()-1, 0)
+
+def _dir_e(regexp):
+	import re
+
+	searchpart = cmdline[pos+1:]
+	match = re.search(regexp, searchpart)
+	if not match:
+		return end()
+	return (pos+1 + match.start(), 0)
+
+def _dir_b(regexp):
+	import re
+
 	if pos == 0:
-		return (0, 0)
-	new_pos = cmdline.rfind(' ', 0, pos-1) + 1
-	if new_pos < 0:
-		new_pos = 0
-	return (new_pos, 0)
+		return start()
+
+	searchpart = cmdline[:pos]
+	match = re.search(regexp, searchpart)
+	if not match:
+		return start()
+	return (match.start()+1, 0)
+
+# Simple, but not inclusive enough:
+# def dir_w(): return _dir_w(r'[^\w]\w')
+# def dir_e(): return _dir_e(r'\w[^\w]')
+# def dir_b(): return _dir_b(r'[^\w]\w+[^\w]*\$') # NOTE: \$ has to be escaped here since we are in a quote inside a fish script
+
+# Slightly too inclusive, e.g. fi--sh matches both '-' characters, but should only match one:
+def dir_w(): return _dir_w(r'[^\w][^\s]|\w[^\w\s]')
+def dir_e(): return _dir_e(r'[^\s][^\w]|[^\w\s]\w')
+# Also, by the time I got to writing this one my brain had already imploded:
+def dir_b(): return _dir_b(r'([^\w][^\s]|\w[^\w\s])\w*[^\w]*\$') # NOTE: \$ has to be escaped here
+
+def dir_W(): return _dir_w(r'\s[^\s]')
+def dir_E(): return _dir_e(r'[^\s]\s')
+def dir_B(): return _dir_b(r'\s[^\s]+\s*\$') # NOTE: \$ has to be escaped here
+
+def dir_h():
+	if pos: return (pos-1, 0)
+	return start()
+
+def dir_l():
+	return (pos+1, 0)
 
 def cmd_d():
 	dst_pos = dir(direction)
@@ -76,9 +122,10 @@ end
 function bind_directions
 	vi_mode $argv[1]
 
-	for direction in W E B
+	for direction in W w E e B b 0 _ h l
 		bind $direction "direction_command '$argv[1]' $direction; $argv[2]"
 	end
+	bind \$ "direction_command '$argv[1]' eol; $argv[2]"
 end
 
 function bind_all
@@ -155,15 +202,6 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind j history-search-forward
 	bind k history-search-backward
 
-	bind h backward-char
-	bind l forward-char
-	bind b backward-word # Note: this implementation is buggy. Try using b from the end of 'echo hi' to see what I mean
-	bind w forward-word # FIXME: Should be start of next word
-	bind e forward-word # FIXME: Should be end of next word
-	bind 0 beginning-of-line
-	bind _ beginning-of-line
-	bind \$ end-of-line
-
 	bind x delete-char
 	bind D kill-line
 	# bind Y 'commandline -f kill-whole-line yank'
@@ -178,6 +216,15 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind_directions ' ' vi_mode_normal
 	bind d 'bind_directions d vi_mode_normal'
 	bind c 'bind_directions c vi_mode_insert'
+
+	# Override generic direction code for simple things that have a close
+	# match in fish's builtin commands, which should be faster:
+	bind h backward-char
+	bind l forward-char
+	bind 0 beginning-of-line
+	bind _ beginning-of-line
+	bind \$ end-of-line
+	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit

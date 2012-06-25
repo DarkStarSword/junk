@@ -1,8 +1,10 @@
 set -l cn (set_color normal)
-set -g __vi_mode_n (set_color blue)'n'$cn
-set -g __vi_mode_r (set_color red)'r'$cn
-set -g __vi_mode_R (set_color --background=red)'R'$cn
-set -g __vi_mode_i (set_color green)'i'$cn
+set -g __vi_mode_normal  (set_color blue)'n'$cn
+set -g __vi_mode_replace (set_color red)'r'$cn
+set -g __vi_mode_REPLACE (set_color --background=red)'R'$cn
+set -g __vi_mode_insert  (set_color green)'i'$cn
+set -g __vi_mode_delete  (set_color red)'d'$cn
+set -g __vi_mode_change  (set_color yellow)'c'$cn
 
 function direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
@@ -95,14 +97,14 @@ def dir_T(char):
 def dir_f(char): return (dir_t(char)[0]+1, -1)
 def dir_F(char): return (dir_T(char)[0]-1, 0)
 
-def cmd_d():
+def cmd_delete():
 	dst_pos = dir(direction)
 	if dst_pos >= pos:
 		new_cmdline = cmdline[:pos] + cmdline[dst_pos:]
 		return (new_cmdline, pos)
 	new_cmdline = cmdline[:dst_pos] + cmdline[pos:]
 	return (new_cmdline, dst_pos)
-cmd_c = cmd_d
+cmd_change = cmd_delete
 
 def dir(d, cursor = False):
 	a = ()
@@ -115,11 +117,10 @@ def dir(d, cursor = False):
 
 def cmd(c): return globals()['cmd_%s' % c]()
 
-if command == ' ':
-	new_pos = dir(direction, True)
-else:
-	(cmdline, new_pos) = cmd(command)
+def cmd_normal():
+	return (cmdline, dir(direction, True))
 
+(cmdline, new_pos) = cmd(command)
 print ( cmdline )
 print ( new_pos )
 
@@ -187,12 +188,14 @@ for c in map(chr, range(0x20, 0x7f)):
 end
 
 function vi_mode
-	set -g vi_mode $argv
+	# Is there a way to do this without eval?
+	# We really want something like a dictionary...
+	eval set -g vi_mode \$__vi_mode_{$argv}
 	commandline -f repaint
 end
 
 function replace
-	vi_mode $__vi_mode_r
+	vi_mode replace
 	bind --erase --all
 	vi_mode_common
 
@@ -208,7 +211,7 @@ function replace
 end
 
 function overwrite
-	vi_mode $__vi_mode_R
+	vi_mode REPLACE
 	bind --erase --all
 	vi_mode_common_insert
 	save_cmdline
@@ -236,7 +239,7 @@ function undo
 end
 
 function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
-	vi_mode $__vi_mode_n
+	vi_mode normal
 
 	bind --erase --all
 
@@ -269,9 +272,9 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind r replace
 	bind R overwrite
 
-	bind_directions $__vi_mode_n vi_mode_normal ''
-	bind d 'bind_directions d vi_mode_normal save_cmdline'
-	bind c 'bind_directions c vi_mode_insert save_cmdline'
+	bind_directions normal vi_mode_normal ''
+	bind d 'bind_directions delete vi_mode_normal save_cmdline'
+	bind c 'bind_directions change vi_mode_insert save_cmdline'
 
 	# Override generic direction code for simple things that have a close
 	# match in fish's builtin commands, which should be faster:
@@ -305,7 +308,7 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 end
 
 function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
-	vi_mode $__vi_mode_i
+	vi_mode insert
 
 	fish_default_key_bindings
 

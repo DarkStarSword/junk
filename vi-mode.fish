@@ -19,6 +19,9 @@ set -g vi_mode_insert  (set_color green)'i'$cn
 set -g vi_mode_delete  (set_color red)'d'$cn
 set -g vi_mode_change  (set_color yellow)'c'$cn
 
+set -g __vi_mode_undo_cmdline ''
+set -g __vi_mode_undo_cmdline_pos 0
+
 function __vi_mode_direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
 
@@ -247,17 +250,17 @@ end
 function __vi_mode_save_cmdline
 	# Only vi style single level for now, patch to suppport vim style
 	# multi-level undo history welcome
-	set -g vi_undo_cmdline (commandline)
-	set -g vi_undo_cmdline_pos (commandline -C)
+	set -g __vi_mode_undo_cmdline (commandline)
+	set -g __vi_mode_undo_cmdline_pos (commandline -C)
 end
 
 function __vi_mode_undo
 	set -l cmdline (commandline)
 	set -l pos (commandline -C)
-	commandline $vi_undo_cmdline
-	commandline -C $vi_undo_cmdline_pos
-	set -g vi_undo_cmdline $cmdline
-	set -g vi_undo_cmdline_pos $pos
+	commandline $__vi_mode_undo_cmdline
+	commandline -C $__vi_mode_undo_cmdline_pos
+	set -g __vi_mode_undo_cmdline $cmdline
+	set -g __vi_mode_undo_cmdline_pos $pos
 end
 
 function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"

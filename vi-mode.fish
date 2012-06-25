@@ -132,20 +132,23 @@ def dir(d, cursor = False):
 def cmd(c): return globals()['cmd_%s' % c]()
 
 def cmd_normal():
-	return (cmdline, dir(direction, True))
+	return (None, dir(direction, True))
 
 try:
 	(cmdline, new_pos) = cmd(command)
+	if cmdline is not None:
+		print ( cmdline )
 except not_found:
-	(cmdline, new_pos) = (cmdline, pos)
-print ( cmdline )
+	new_pos = pos
 print ( new_pos )
 
 " $argv[1] $argv[2] (commandline -C) (commandline)) # commandline should always be last
 
 	set new_pos $ret[-1]
 	set -e ret[-1] # Guessing that deleting last element is likely to be faster than deleting first
-	commandline $ret
+	if test (count $ret) -gt 0
+		commandline $ret
+	end
 	commandline -C $new_pos
 end
 

@@ -1,12 +1,12 @@
 set -l cn (set_color normal)
-set -g __vi_mode_normal  (set_color blue)'n'$cn
-set -g __vi_mode_replace (set_color red)'r'$cn
-set -g __vi_mode_REPLACE (set_color --background=red)'R'$cn
-set -g __vi_mode_insert  (set_color green)'i'$cn
-set -g __vi_mode_delete  (set_color red)'d'$cn
-set -g __vi_mode_change  (set_color yellow)'c'$cn
+set -g vi_mode_normal  (set_color blue)'n'$cn
+set -g vi_mode_replace (set_color red)'r'$cn
+set -g vi_mode_REPLACE (set_color --background=red)'R'$cn
+set -g vi_mode_insert  (set_color green)'i'$cn
+set -g vi_mode_delete  (set_color red)'d'$cn
+set -g vi_mode_change  (set_color yellow)'c'$cn
 
-function direction_command
+function __vi_mode_direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
 
 	# There may be some speedup to be gained by splitting this out into a
@@ -132,35 +132,35 @@ print ( new_pos )
 	commandline -C $new_pos
 end
 
-function vi_mode_common -d "common key bindings for all vi-like modes"
-	bind \e vi_mode_normal
+function __vi_mode_common -d "common key bindings for all vi-like modes"
+	bind \e __vi_mode_normal
 	# ^C breaks if multiline commandline:
 	# Can we put commandline into history when pressing ^C?
-	bind \cc 'save_cmdline; echo; commandline ""; vi_mode_insert'
+	bind \cc '__vi_mode_save_cmdline; echo; commandline ""; vi_mode_insert'
 	bind \cd delete-or-exit
 	bind \cl 'clear; commandline -f repaint'
 
 	bind \n "commandline -f execute; vi_mode_insert"
 end
 
-function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
-	vi_mode_common
-	bind \e 'commandline -f backward-char; vi_mode_normal'
+function __vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
+	__vi_mode_common
+	bind \e 'commandline -f backward-char; __vi_mode_normal'
 end
 
-function bind_directions
-	vi_mode $argv[1]
+function __vi_mode_bind_directions
+	__vi_mode $argv[1]
 
 	for direction in W w E e B b 0 _ h l
-		bind $direction "$argv[3]; direction_command '$argv[1]' $direction; $argv[2]"
+		bind $direction "$argv[3]; __vi_mode_direction_command '$argv[1]' $direction; $argv[2]"
 	end
-	bind \$ "direction_command '$argv[3]; $argv[1]' eol; $argv[2]"
+	bind \$ "__vi_mode_direction_command '$argv[3]; $argv[1]' eol; $argv[2]"
 	for direction in f F t T
-		bind $direction "bind_all '$argv[3]; direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
+		bind $direction "__vi_mode_bind_all '$argv[3]; __vi_mode_direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
 	end
 end
 
-function bind_all
+function __vi_mode_bind_all
 	# There seems to be some magic that doesn't work properly without this:
 	bind '' self-insert
 
@@ -186,43 +186,43 @@ for c in map(chr, range(0x20, 0x7f)):
 " | .
 end
 
-function vi_mode
+function __vi_mode
 	# Is there a way to do this without eval?
 	# We really want something like a dictionary...
-	eval set -g vi_mode \$__vi_mode_{$argv}
+	eval set -g vi_mode \$vi_mode_{$argv}
 	commandline -f repaint
 end
 
-function replace
-	vi_mode replace
+function __vi_mode_replace
+	__vi_mode replace
 	bind --erase --all
-	vi_mode_common
+	__vi_mode_common
 
 	# backward-char should happen last, but only works if specified first
 	# (guess I should dig through the C code and figure out what is going
 	# on):
-	# bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; vi_mode_normal"
-	bind_all "save_cmdline; commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
+	# __vi_mode_bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; __vi_mode_normal"
+	__vi_mode_bind_all "__vi_mode_save_cmdline; commandline -f backward-char delete-char; commandline -i %k; __vi_mode_normal"
 
 end
 
-function overwrite
-	vi_mode REPLACE
+function __vi_mode_overwrite
+	__vi_mode REPLACE
 	bind --erase --all
-	vi_mode_common_insert
-	save_cmdline
+	__vi_mode_common_insert
+	__vi_mode_save_cmdline
 
-	bind_all "commandline -f delete-char; commandline -i %k"
+	__vi_mode_bind_all "commandline -f delete-char; commandline -i %k"
 end
 
-function save_cmdline
+function __vi_mode_save_cmdline
 	# Only vi style single level for now, patch to suppport vim style
 	# multi-level undo history welcome
 	set -g vi_undo_cmdline (commandline)
 	set -g vi_undo_cmdline_pos (commandline -C)
 end
 
-function undo
+function __vi_mode_undo
 	set -l cmdline (commandline)
 	set -l pos (commandline -C)
 	commandline $vi_undo_cmdline
@@ -231,8 +231,8 @@ function undo
 	set -g vi_undo_cmdline_pos $pos
 end
 
-function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
-	vi_mode normal
+function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
+	__vi_mode normal
 
 	bind --erase --all
 
@@ -240,14 +240,14 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	# prompt to change, but we don't want unbound keys to be able to
 	# self-insert, so set the default binding, but bind everything to
 	# do nothing (which is wasteful, but seems to work):
-	bind_all ''
+	__vi_mode_bind_all ''
 
-	vi_mode_common
+	__vi_mode_common
 
-	bind i 'save_cmdline; vi_mode_insert'
-	bind I 'save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
-	bind a 'save_cmdline; commandline -f forward-char; vi_mode_insert'
-	bind A 'save_cmdline; commandline -f end-of-line; vi_mode_insert'
+	bind i '__vi_mode_save_cmdline; vi_mode_insert'
+	bind I '__vi_mode_save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
+	bind a '__vi_mode_save_cmdline; commandline -f forward-char; vi_mode_insert'
+	bind A '__vi_mode_save_cmdline; commandline -f end-of-line; vi_mode_insert'
 
 	bind j history-search-forward
 	bind k history-search-backward
@@ -256,16 +256,16 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind D kill-line
 	# bind Y 'commandline -f kill-whole-line yank'
 	bind P yank
-	bind p 'save_cmdline; commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
-	bind C 'save_cmdline; commandline -f kill-line; vi_mode_insert'
-	bind S 'save_cmdline; commandline -f kill-whole-line; vi_mode_insert'
-	bind s 'save_cmdline; commandline -f delete-char; vi_mode_insert'
-	bind r replace
-	bind R overwrite
+	bind p '__vi_mode_save_cmdline; commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
+	bind C '__vi_mode_save_cmdline; commandline -f kill-line; vi_mode_insert'
+	bind S '__vi_mode_save_cmdline; commandline -f kill-whole-line; vi_mode_insert'
+	bind s '__vi_mode_save_cmdline; commandline -f delete-char; vi_mode_insert'
+	bind r __vi_mode_replace
+	bind R __vi_mode_overwrite
 
-	bind_directions normal vi_mode_normal ''
-	bind d 'bind_directions delete vi_mode_normal save_cmdline'
-	bind c 'bind_directions change vi_mode_insert save_cmdline'
+	__vi_mode_bind_directions normal __vi_mode_normal ''
+	bind d '__vi_mode_bind_directions delete __vi_mode_normal __vi_mode_save_cmdline'
+	bind c '__vi_mode_bind_directions change vi_mode_insert __vi_mode_save_cmdline'
 
 	# Override generic direction code for simple things that have a close
 	# match in fish's builtin commands, which should be faster:
@@ -276,7 +276,7 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind \$ end-of-line
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
-	bind u undo
+	bind u __vi_mode_undo
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit
@@ -295,11 +295,11 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 end
 
 function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
-	vi_mode insert
+	__vi_mode insert
 
 	fish_default_key_bindings
 
-	vi_mode_common_insert
+	__vi_mode_common_insert
 end
 
 # vi:noexpandtab:sw=4:ts=4

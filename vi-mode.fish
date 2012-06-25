@@ -42,11 +42,19 @@ def end():
 	return (len(cmdline), -1)
 class not_found(Exception): pass
 
-dir_0 = dir__ = dir_fnw = start # FIXME: start of line/first non-whitespace char in line, not entire cmdline
+dir_0 = start # FIXME: start of line, not entire cmdline
 dir_eol = end # FIXME: end of line, not entire cmdline
 
-# These three routines are similar, they can probably be combined into one, but
+# These routines are all similar, they can probably be combined into one, but
 # I'll make sure I get all working and understand the differences first
+def dir_fnw(): # First Non-Whitespace
+	import re
+	match = re.search('^\s*[^\s]', cmdline) # FIXME: Current line, not entire cmdline
+	if not match:
+		return start()
+	return (match.end()-1, 0)
+dir__ = dir_fnw # XXX: I always used _ as this, but turns out that might not be quite right
+
 def _dir_w(regexp):
 	import re
 
@@ -66,6 +74,9 @@ def _dir_e(regexp):
 	return (pos+2 + match.start(), -1)
 
 def _dir_b(regexp):
+	# I've had a thought - it might be easier to reverse the string and reuse
+	# the regexp from dir_w rather thank the clunky regexp trying to match from
+	# the right of the string that we use here.
 	import re
 
 	if pos == 0:
@@ -305,7 +316,6 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind h backward-char
 	bind l forward-char
 	bind 0 beginning-of-line
-	bind _ beginning-of-line
 	bind \$ end-of-line
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 

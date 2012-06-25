@@ -37,6 +37,7 @@ def start():
 	return (0, 0)
 def end():
 	return (len(cmdline), -1)
+class not_found(Exception): pass
 
 dir_0 = dir__ = start # FIXME: start of line/first non-whitespace char in line, not entire cmdline
 dir_eol = end # FIXME: end of line, not entire cmdline
@@ -98,13 +99,13 @@ def dir_l():
 def dir_t(char):
 	new_pos = cmdline.find(char, pos+1)
 	if new_pos < 0:
-		return (pos, 0)
+		raise not_found
 	return (new_pos, -1)
 
 def dir_T(char):
 	new_pos = cmdline.rfind(char, 0, pos)
 	if new_pos < 0:
-		return (pos, 0)
+		raise not_found
 	return (new_pos+1, 0)
 
 def dir_f(char): return (dir_t(char)[0]+1, -1)
@@ -133,7 +134,10 @@ def cmd(c): return globals()['cmd_%s' % c]()
 def cmd_normal():
 	return (cmdline, dir(direction, True))
 
-(cmdline, new_pos) = cmd(command)
+try:
+	(cmdline, new_pos) = cmd(command)
+except not_found:
+	(cmdline, new_pos) = (cmdline, pos)
 print ( cmdline )
 print ( new_pos )
 

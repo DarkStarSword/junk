@@ -42,7 +42,7 @@ def end():
 	return (len(cmdline), -1)
 class not_found(Exception): pass
 
-dir_0 = dir__ = start # FIXME: start of line/first non-whitespace char in line, not entire cmdline
+dir_0 = dir__ = dir_fnw = start # FIXME: start of line/first non-whitespace char in line, not entire cmdline
 dir_eol = end # FIXME: end of line, not entire cmdline
 
 # These three routines are similar, they can probably be combined into one, but
@@ -180,7 +180,8 @@ function __vi_mode_bind_directions
 	for direction in W w E e B b 0 _ h l
 		bind $direction "$argv[3]; __vi_mode_direction_command '$argv[1]' $direction; $argv[2]"
 	end
-	bind \$ "__vi_mode_direction_command '$argv[3]; $argv[1]' eol; $argv[2]"
+	bind \$ "$argv[3]; __vi_mode_direction_command '$argv[1]' eol; $argv[2]"
+	bind \^ "$argv[3]; __vi_mode_direction_command '$argv[1]' fnw; $argv[2]"
 	for direction in f F t T
 		bind $direction "__vi_mode_bind_all '$argv[3]; __vi_mode_direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
 	end

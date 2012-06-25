@@ -146,6 +146,9 @@ end
 function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
 	vi_mode_common
 	bind \e 'commandline -f backward-char; vi_mode_normal'
+	if functions -q vi_mode_user
+		vi_mode_user insert
+	end
 end
 
 function bind_directions
@@ -182,8 +185,8 @@ for c in map(chr, range(0x20, 0x7f)):
 		r = r\"'\%s'\" % c
 	else:
 		l = r = \"'%s'\" % c
-	print '''bind %s %s%s%s''' % (l, q, command.replace('%k', r).replace('%q', Q), q)
-" | .
+	print ( '''bind %s %s%s%s''' % (l, q, command.replace('%k', r).replace('%q', Q), q))
+	" | .
 end
 
 function vi_mode
@@ -204,6 +207,9 @@ function replace
 	# bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; vi_mode_normal"
 	bind_all "save_cmdline; commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
 
+	if functions -q vi_mode_user
+		vi_mode_user replace
+	end
 end
 
 function overwrite
@@ -213,6 +219,9 @@ function overwrite
 	save_cmdline
 
 	bind_all "commandline -f delete-char; commandline -i %k"
+	if functions -q vi_mode_user
+		vi_mode_user overwrite
+	end
 end
 
 function save_cmdline
@@ -292,6 +301,10 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	#   delete with x etc. doesn't. "* and "+ should natually go to the
 	#   appropriate X selection if possible)
 	# etc.
+
+	if functions -q vi_mode_user
+		vi_mode_user normal
+	end
 end
 
 function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"

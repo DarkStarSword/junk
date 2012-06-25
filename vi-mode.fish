@@ -1,3 +1,9 @@
+set -l cn (set_color normal)
+set -g __vi_mode_n (set_color blue)'n'$cn
+set -g __vi_mode_r (set_color red)'r'$cn
+set -g __vi_mode_R (set_color --background=red)'R'$cn
+set -g __vi_mode_i (set_color green)'i'$cn
+
 function direction_command
 	# Embedded python... If you can do this in pure shell then more power to you :)
 
@@ -114,8 +120,8 @@ if command == ' ':
 else:
 	(cmdline, new_pos) = cmd(command)
 
-print cmdline
-print new_pos
+print ( cmdline )
+print ( new_pos )
 
 " $argv[1] $argv[2] (commandline -C) (commandline)) # commandline should always be last
 
@@ -137,6 +143,9 @@ end
 function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
 	vi_mode_common
 	bind \e 'commandline -f backward-char; vi_mode_normal'
+	if functions -q vi_mode_user
+		vi_mode_user insert
+	end
 end
 
 function bind_directions
@@ -173,8 +182,8 @@ for c in map(chr, range(0x20, 0x7f)):
 		r = r\"'\%s'\" % c
 	else:
 		l = r = \"'%s'\" % c
-	print '''bind %s %s%s%s''' % (l, q, command.replace('%k', r).replace('%q', Q), q)
-" | .
+	print ( '''bind %s %s%s%s''' % (l, q, command.replace('%k', r).replace('%q', Q), q))
+	" | .
 end
 
 function vi_mode
@@ -183,7 +192,7 @@ function vi_mode
 end
 
 function replace
-	vi_mode 'r'
+	vi_mode $__vi_mode_r
 	bind --erase --all
 	vi_mode_common
 
@@ -193,15 +202,21 @@ function replace
 	# bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; vi_mode_normal"
 	bind_all "save_cmdline; commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
 
+	if functions -q vi_mode_user
+		vi_mode_user replace
+	end
 end
 
 function overwrite
-	vi_mode 'R'
+	vi_mode $__vi_mode_R
 	bind --erase --all
 	vi_mode_common_insert
 	save_cmdline
 
 	bind_all "commandline -f delete-char; commandline -i %k"
+	if functions -q vi_mode_user
+		vi_mode_user overwrite
+	end
 end
 
 function save_cmdline
@@ -221,7 +236,7 @@ function undo
 end
 
 function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
-	vi_mode ' '
+	vi_mode $__vi_mode_n
 
 	bind --erase --all
 
@@ -254,7 +269,7 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind r replace
 	bind R overwrite
 
-	bind_directions ' ' vi_mode_normal ''
+	bind_directions $__vi_mode_n vi_mode_normal ''
 	bind d 'bind_directions d vi_mode_normal save_cmdline'
 	bind c 'bind_directions c vi_mode_insert save_cmdline'
 
@@ -283,10 +298,14 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	#   delete with x etc. doesn't. "* and "+ should natually go to the
 	#   appropriate X selection if possible)
 	# etc.
+
+	if functions -q vi_mode_user
+		vi_mode_user normal
+	end
 end
 
 function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
-	vi_mode 'I'
+	vi_mode $__vi_mode_i
 
 	fish_default_key_bindings
 

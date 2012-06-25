@@ -166,13 +166,37 @@ print ( new_pos )
 	commandline -C $new_pos
 end
 
+function __vi_mode_common_emacs -d "common key bindings for all vi-like modes that are identical to the emacs mode"
+	# Feel free to expand this list for anything that makes sense, this is just
+	# a couple of hand-picked ones that seemed useful and/or I use :)
+
+	bind \e\[A up-or-search
+	bind \e\[B down-or-search
+	bind -k down down-or-search
+	bind -k up up-or-search
+
+	bind \e\[C forward-char
+	bind \e\[D backward-char
+	bind -k right forward-char
+	bind -k left backward-char
+
+	bind \e\[H beginning-of-line
+	bind \e\[F end-of-line
+	bind -k home beginning-of-line
+	bind -k end end-of-line
+
+	bind \cl 'clear; commandline -f repaint'
+	bind \cd delete-or-exit
+end
+
 function __vi_mode_common -d "common key bindings for all vi-like modes"
+	__vi_mode_common_emacs
+
 	bind \e __vi_mode_normal
+
 	# ^C breaks if multiline commandline:
 	# Can we put commandline into history when pressing ^C?
 	bind \cc '__vi_mode_save_cmdline; echo; commandline ""; vi_mode_insert'
-	bind \cd delete-or-exit
-	bind \cl 'clear; commandline -f repaint'
 
 	bind \n "commandline -f execute; vi_mode_insert"
 end

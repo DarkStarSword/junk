@@ -150,7 +150,7 @@ print ( new_pos )
 	set new_pos $ret[-1]
 	set -e ret[-1] # Guessing that deleting last element is likely to be faster than deleting first
 	if test (count $ret) -gt 0
-		commandline $ret
+		commandline -- $ret
 	end
 	commandline -C $new_pos
 end

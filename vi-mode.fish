@@ -311,3 +311,5 @@ function vi_mode_insert -d "vi-like key bindings for fish (insert mode)"
 
 	vi_mode_common_insert
 end
+
+# vi:noexpandtab:sw=4:ts=4

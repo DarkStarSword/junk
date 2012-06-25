@@ -74,6 +74,21 @@ def dir_h():
 def dir_l():
 	return (pos+1, 0)
 
+def dir_t(char):
+	new_pos = cmdline.find(char, pos+1)
+	if new_pos < 0:
+		return (pos, 0)
+	return (new_pos, -1)
+
+def dir_T(char):
+	new_pos = cmdline.rfind(char, 0, pos)
+	if new_pos < 0:
+		return (pos, 0)
+	return (new_pos+1, 0)
+
+def dir_f(char): return (dir_t(char)[0]+1, -1)
+def dir_F(char): return (dir_T(char)[0]-1, 0)
+
 def cmd_d():
 	dst_pos = dir(direction)
 	if dst_pos >= pos:
@@ -84,7 +99,10 @@ def cmd_d():
 cmd_c = cmd_d
 
 def dir(d, cursor = False):
-	(new_pos, cursor_off) = globals()['dir_%s' % d]()
+	a = ()
+	if ':' in d:
+		(d, a) = d.split(':', 1)
+	(new_pos, cursor_off) = globals()['dir_%s' % d](*a)
 	if cursor:
 		return new_pos + cursor_off
 	return new_pos
@@ -126,6 +144,9 @@ function bind_directions
 		bind $direction "direction_command '$argv[1]' $direction; $argv[2]"
 	end
 	bind \$ "direction_command '$argv[1]' eol; $argv[2]"
+	for direction in f F t T
+		bind $direction "bind_all 'direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
+	end
 end
 
 function bind_all
@@ -135,10 +156,11 @@ function bind_all
 	python -c "
 command = '''$argv'''
 for c in map(chr, range(0x20, 0x7f)):
-	q = '\"'
+	q = '\"' # Enclose command in these
+	Q = '\'' # Other quote - for quotes inside command
 	if c == '\"':
 		l = r = r'\\%s' % c
-		q = '\''
+		(q, Q) = (Q, q) # Swap quotes
 	elif c in ['(', ')', '<', '>', ';', '|', '\'']:
 		l = r = r'\%s' % c
 	elif c == '\\\\':
@@ -149,7 +171,7 @@ for c in map(chr, range(0x20, 0x7f)):
 		r = r\"'\%s'\" % c
 	else:
 		l = r = \"'%s'\" % c
-	print '''bind %s %s%s%s''' % (l, q, command.replace('%k', r), q)
+	print '''bind %s %s%s%s''' % (l, q, command.replace('%k', r).replace('%q', Q), q)
 " | .
 end
 

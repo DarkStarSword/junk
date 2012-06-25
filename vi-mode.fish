@@ -127,7 +127,9 @@ end
 
 function vi_mode_common -d "common key bindings for all vi-like modes"
 	bind \e vi_mode_normal
-	bind \cc 'echo; commandline ""; vi_mode_insert' # Breaks if multiline commandline
+	# ^C breaks if multiline commandline:
+	# Can we put commandline into history when pressing ^C?
+	bind \cc 'save_cmdline; echo; commandline ""; vi_mode_insert'
 	bind \cd delete-or-exit
 	bind \cl 'clear; commandline -f repaint'
 end
@@ -141,11 +143,11 @@ function bind_directions
 	vi_mode $argv[1]
 
 	for direction in W w E e B b 0 _ h l
-		bind $direction "direction_command '$argv[1]' $direction; $argv[2]"
+		bind $direction "$argv[3]; direction_command '$argv[1]' $direction; $argv[2]"
 	end
-	bind \$ "direction_command '$argv[1]' eol; $argv[2]"
+	bind \$ "direction_command '$argv[3]; $argv[1]' eol; $argv[2]"
 	for direction in f F t T
-		bind $direction "bind_all 'direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
+		bind $direction "bind_all '$argv[3]; direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
 	end
 end
 
@@ -189,7 +191,7 @@ function replace
 	# (guess I should dig through the C code and figure out what is going
 	# on):
 	# bind_all "commandline -f delete-char; commandline -i %k; commandline -f backward-char; vi_mode_normal"
-	bind_all "commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
+	bind_all "save_cmdline; commandline -f backward-char delete-char; commandline -i %k; vi_mode_normal"
 
 end
 
@@ -197,8 +199,25 @@ function overwrite
 	vi_mode 'R'
 	bind --erase --all
 	vi_mode_common_insert
+	save_cmdline
 
 	bind_all "commandline -f delete-char; commandline -i %k"
+end
+
+function save_cmdline
+	# Only vi style single level for now, patch to suppport vim style
+	# multi-level undo history welcome
+	set -g vi_undo_cmdline (commandline)
+	set -g vi_undo_cmdline_pos (commandline -C)
+end
+
+function undo
+	set -l cmdline (commandline)
+	set -l pos (commandline -C)
+	commandline $vi_undo_cmdline
+	commandline -C $vi_undo_cmdline_pos
+	set -g vi_undo_cmdline $cmdline
+	set -g vi_undo_cmdline_pos $pos
 end
 
 function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
@@ -216,10 +235,10 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 
 	bind \n "commandline -f execute; vi_mode_insert"
 
-	bind i vi_mode_insert
-	bind I 'commandline -f beginning-of-line; vi_mode_insert'
-	bind a 'commandline -f forward-char; vi_mode_insert'
-	bind A 'commandline -f end-of-line; vi_mode_insert'
+	bind i 'save_cmdline; vi_mode_insert'
+	bind I 'save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
+	bind a 'save_cmdline; commandline -f forward-char; vi_mode_insert'
+	bind A 'save_cmdline; commandline -f end-of-line; vi_mode_insert'
 
 	bind j history-search-forward
 	bind k history-search-backward
@@ -228,16 +247,16 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind D kill-line
 	# bind Y 'commandline -f kill-whole-line yank'
 	bind P yank
-	bind p 'commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
-	bind C 'commandline -f kill-line; vi_mode_insert'
-	bind S 'commandline -f kill-whole-line; vi_mode_insert'
-	bind s 'commandline -f delete-char; vi_mode_insert'
+	bind p 'save_cmdline; commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
+	bind C 'save_cmdline; commandline -f kill-line; vi_mode_insert'
+	bind S 'save_cmdline; commandline -f kill-whole-line; vi_mode_insert'
+	bind s 'save_cmdline; commandline -f delete-char; vi_mode_insert'
 	bind r replace
 	bind R overwrite
 
-	bind_directions ' ' vi_mode_normal
-	bind d 'bind_directions d vi_mode_normal'
-	bind c 'bind_directions c vi_mode_insert'
+	bind_directions ' ' vi_mode_normal ''
+	bind d 'bind_directions d vi_mode_normal save_cmdline'
+	bind c 'bind_directions c vi_mode_insert save_cmdline'
 
 	# Override generic direction code for simple things that have a close
 	# match in fish's builtin commands, which should be faster:
@@ -248,15 +267,12 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind \$ end-of-line
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
+	bind u undo
+
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit
 	# bind y yank-direction
 	# bind g magic :-P
-	# bind u undo
-	# bind f find
-	# bind F find-prev
-	# bind t till
-	# bind T till-prev
 	# bind o insert on new line below
 	# bind O insert on new line above
 	# bind ^a increment next number

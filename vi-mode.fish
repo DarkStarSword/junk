@@ -1,3 +1,16 @@
+# vi-mode for fish
+#
+# To use this script, put it somewhere fish can find and add the following
+# lines to your ~/.config/fish/config.fish:
+#
+# function fish_user_keybindings
+#         vi_mode_insert
+# end
+#
+# function fish_prompt -d "Write out the prompt"
+#         printf '%s@%s%s%s%s [%s]> ' (whoami) (hostname|cut -d . -f 1) (set_color $fish_color_cwd) (prompt_pwd) (set_color normal) $vi_mode
+# end
+
 set -l cn (set_color normal)
 set -g vi_mode_normal  (set_color blue)'n'$cn
 set -g vi_mode_replace (set_color red)'r'$cn

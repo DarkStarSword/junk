@@ -132,6 +132,8 @@ function vi_mode_common -d "common key bindings for all vi-like modes"
 	bind \cc 'save_cmdline; echo; commandline ""; vi_mode_insert'
 	bind \cd delete-or-exit
 	bind \cl 'clear; commandline -f repaint'
+
+	bind \n "commandline -f execute; vi_mode_insert"
 end
 
 function vi_mode_common_insert -d "common key bindings for all insert vi-like modes"
@@ -232,8 +234,6 @@ function vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind_all ''
 
 	vi_mode_common
-
-	bind \n "commandline -f execute; vi_mode_insert"
 
 	bind i 'save_cmdline; vi_mode_insert'
 	bind I 'save_cmdline; commandline -f beginning-of-line; vi_mode_insert'

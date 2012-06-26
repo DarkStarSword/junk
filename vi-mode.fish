@@ -332,12 +332,10 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind a '__vi_mode_save_cmdline; commandline -f forward-char; vi_mode_insert'
 	bind A '__vi_mode_save_cmdline; commandline -f end-of-line; vi_mode_insert'
 
+	# Cool, these functions are pretty close to what I wanted:
 	# FIXME: Cursor not placed in correct position, but moving it prevents further searching
-	# TODO: Navigate multi-line commandline; history previous from 1st line,
-	# history next from last line. Need to figure out how to make this work
-	# well with fish history & searching...
-	bind j history-search-forward
-	bind k history-search-backward
+	bind j down-or-search
+	bind k up-or-search
 
 	bind x delete-char
 	bind D kill-line

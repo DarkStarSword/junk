@@ -196,9 +196,8 @@ function __vi_mode_common -d "common key bindings for all vi-like modes"
 
 	bind \e __vi_mode_normal
 
-	# ^C breaks if multiline commandline:
 	# Can we put commandline into history when pressing ^C?
-	bind \cc '__vi_mode_save_cmdline; echo; commandline ""; vi_mode_insert'
+	bind \cc '__vi_mode_save_cmdline; for i in (seq (commandline -L)); echo; end; commandline ""; vi_mode_insert'
 
 	bind \n "commandline -f execute; vi_mode_insert"
 end

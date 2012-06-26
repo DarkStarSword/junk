@@ -18,6 +18,7 @@ set -g vi_mode_REPLACE (set_color --background=red)'R'$cn
 set -g vi_mode_insert  (set_color green)'i'$cn
 set -g vi_mode_delete  (set_color red)'d'$cn
 set -g vi_mode_change  (set_color yellow)'c'$cn
+set -g vi_mode_g       (set_color blue)'g'$cn
 
 set -g __vi_mode_undo_cmdline ''
 set -g __vi_mode_undo_cmdline_pos 0
@@ -299,6 +300,19 @@ function __vi_mode_undo
 	set -g __vi_mode_undo_cmdline_pos $pos
 end
 
+function __vi_mode_g -d "vi-like key bindings for fish (commands starting with g)"
+	__vi_mode g
+	bind --erase --all
+	__vi_mode_bind_all '__vi_mode_normal'
+	__vi_mode_common
+
+	bind I '__vi_mode_save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
+	# TODO: The rest of the g commands + directions.
+	# I need to think about the best way to do the g directions. One
+	# possibility is a bind_directions_g function which is called from here and
+	# also bound to g in bind_directions
+end
+
 function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	__vi_mode normal
 
@@ -313,10 +327,14 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	__vi_mode_common
 
 	bind i '__vi_mode_save_cmdline; vi_mode_insert'
-	bind I '__vi_mode_save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
+	bind I '__vi_mode_save_cmdline; __vi_mode_direction_command normal fnw; vi_mode_insert'
 	bind a '__vi_mode_save_cmdline; commandline -f forward-char; vi_mode_insert'
 	bind A '__vi_mode_save_cmdline; commandline -f end-of-line; vi_mode_insert'
 
+	# FIXME: Cursor not placed in correct position, but moving it prevents further searching
+	# TODO: Navigate multi-line commandline; history previous from 1st line,
+	# history next from last line. Need to figure out how to make this work
+	# well with fish history & searching...
 	bind j history-search-forward
 	bind k history-search-backward
 
@@ -343,6 +361,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind \$ end-of-line
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
+	bind g __vi_mode_g
 	bind u __vi_mode_undo
 
 	# NOT IMPLEMENTED:

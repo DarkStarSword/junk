@@ -358,10 +358,10 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind j down-or-search
 	bind k up-or-search
 
-	bind x delete-char
-	bind D kill-line
+	bind x '__vi_mode_save_cmdline; commandline -f delete-char'
+	bind D '__vi_mode_save_cmdline; commandline -f kill-line'
 	# bind Y 'commandline -f kill-whole-line yank'
-	bind P yank
+	bind P '__vi_mode_save_cmdline; commandline -f yank'
 	bind p '__vi_mode_save_cmdline; commandline -f yank forward-char' # Yes, this is reversed. Otherwise it does the wrong thing. Go figure.
 	bind C '__vi_mode_save_cmdline; commandline -f kill-line; vi_mode_insert'
 	bind S '__vi_mode_save_cmdline; commandline -f kill-whole-line; vi_mode_insert'

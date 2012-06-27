@@ -431,6 +431,10 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 
 	__vi_mode_common
 
+	# Fish recently gained support for this, redirect to /dev/null so it
+	# doesn't fall over if running an old version of fish:
+	commandline -f suppress-autosuggestion 2>/dev/null
+
 	bind i '__vi_mode_save_cmdline; vi_mode_insert'
 	bind I '__vi_mode_save_cmdline; __vi_mode_direction_command normal fnw; vi_mode_insert'
 	bind a '__vi_mode_save_cmdline; commandline -f forward-char; vi_mode_insert'
@@ -472,7 +476,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind l forward-char
 	bind 0 beginning-of-line
 	# bind \$ end-of-line #FIXME: Cursor position
-	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
+	# bind b backward-word # Note: built-in implementation only recently fixed. Also, before enabling this override, determine if this matches on the right characters
 
 	bind g __vi_mode_g # MUST BE AFTER BIND_DIRECTIONS... I'm thinking about changing it so that this is all handled by bind_directions
 	bind u __vi_mode_undo

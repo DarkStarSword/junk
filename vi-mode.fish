@@ -37,7 +37,7 @@ import sys
 command = sys.argv[1]
 direction = sys.argv[2]
 new_pos = pos = int(sys.argv[3])
-lineno = int(sys.argv[4])
+lineno = int(sys.argv[4]) - 1
 cmdline_list = sys.argv[5:]
 cmdline = '\n'.join(cmdline_list)
 
@@ -47,17 +47,23 @@ def end():
 	return (len(cmdline), -1)
 class not_found(Exception): pass
 
-dir_0 = start # FIXME: start of line, not entire cmdline
-dir_eol = end # FIXME: end of line, not entire cmdline
+def dir_0():
+	return (reduce(lambda a,b: a + len(b) + 1, cmdline_list[:lineno], 0), 0)
+
+def dir_eol(): # end of line
+	before_len = reduce(lambda a,b: a + len(b) + 1, cmdline_list[:lineno], 0)
+	line_len = len(cmdline_list[lineno]) or 1
+	return (before_len + line_len, -1)
 
 # These routines are all similar, they can probably be combined into one, but
 # I'll make sure I get all working and understand the differences first
 def dir_fnw(): # First Non-Whitespace
 	import re
-	match = re.search('^\s*[^\s]', cmdline) # FIXME: Current line, not entire cmdline
+	len_before = reduce(lambda a,b: a + len(b) + 1, cmdline_list[:lineno], 0)
+	match = re.search('^\s*[^\s]', cmdline_list[lineno])
 	if not match:
 		return start()
-	return (match.end()-1, 0)
+	return (len_before + match.end()-1, 0)
 dir__ = dir_fnw # XXX: I always used _ as this, but turns out that might not be quite right
 
 def _dir_w(regexp):
@@ -140,13 +146,13 @@ def cmd_delete():
 cmd_change = cmd_delete
 
 def cmd_o():
-	above = '\n'.join(cmdline_list[:lineno])
-	below = '\n'.join(cmdline_list[lineno:])
+	above = '\n'.join(cmdline_list[:lineno + 1])
+	below = '\n'.join(cmdline_list[lineno + 1:])
 	return (above + '\n\n' + below, len(above)+1)
 
 def cmd_O():
-	above = '\n'.join(cmdline_list[:lineno-1])
-	below = '\n'.join(cmdline_list[lineno-1:])
+	above = '\n'.join(cmdline_list[:lineno])
+	below = '\n'.join(cmdline_list[lineno:])
 	return (above + '\n\n' + below, len(above)+1)
 
 def dir(d, cursor = False):
@@ -372,7 +378,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind h backward-char
 	bind l forward-char
 	bind 0 beginning-of-line
-	bind \$ end-of-line
+	# bind \$ end-of-line #FIXME: Cursor position
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
 	bind g __vi_mode_g
@@ -382,10 +388,8 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	# bind 2 vi-arg-digit
 	# bind y yank-direction
 	# bind g magic :-P
-	# bind o insert on new line below
-	# bind O insert on new line above
 	# bind ^a increment next number
-	# bind ^a increment next number
+	# bind ^x decrement next number
 	# bind /?nN search (jk kind of does this)
 	# registers (maybe try to make sensible integration into X, like an
 	#   explicit yank with y goes to an X selection, while an implicit

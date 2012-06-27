@@ -97,6 +97,19 @@ def _dir_b(regexp):
 		return start()
 	return (len(searchpart) - (match.start()+1), 0)
 
+def _dir_ge(regexp):
+	import re
+
+	if pos == 0:
+		return start()
+
+	# Reverse the string instead of matching to right:
+	searchpart = cmdline[pos::-1]
+	match = re.search(regexp, searchpart)
+	if not match:
+		return start()
+	return (len(searchpart) - (match.end()), 0)
+
 # Simple, but not inclusive enough:
 # def dir_w(): return _dir_w(r'[^\w]\w')
 # def dir_e(): return _dir_e(r'\w[^\w]')
@@ -113,6 +126,8 @@ def dir_e(): return _dir_e(_dir_e_regexp)
 def dir_E(): return _dir_e(_dir_E_regexp)
 def dir_b(): return _dir_b(_dir_e_regexp)
 def dir_B(): return _dir_b(_dir_E_regexp)
+def dir_ge(): return _dir_ge(_dir_w_regexp)
+def dir_gE(): return _dir_ge(_dir_W_regexp)
 
 def dir_h():
 	if pos: return (pos-1, 0)
@@ -241,6 +256,14 @@ function __vi_mode_bind_directions
 	for direction in f F t T
 		bind $direction "__vi_mode_bind_all '$argv[3]; __vi_mode_direction_command %q$argv[1]%q {$direction}:%k; $argv[2]'"
 	end
+
+	bind g "__vi_mode_bind_directions_g $argv"
+end
+
+function __vi_mode_bind_directions_g
+	for direction in e E
+		bind $direction "$argv[3]; __vi_mode_direction_command '$argv[1]' g$direction; $argv[2]"
+	end
 end
 
 function __vi_mode_bind_all
@@ -328,9 +351,8 @@ function __vi_mode_g -d "vi-like key bindings for fish (commands starting with g
 
 	bind I '__vi_mode_save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
 	# TODO: The rest of the g commands + directions.
-	# I need to think about the best way to do the g directions. One
-	# possibility is a bind_directions_g function which is called from here and
-	# also bound to g in bind_directions
+
+	__vi_mode_bind_directions_g normal __vi_mode_normal ''
 end
 
 function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
@@ -381,7 +403,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	# bind \$ end-of-line #FIXME: Cursor position
 	# bind b backward-word # Note: built-in implementation is buggy (patch submitted). Also, before enabling this override, determine if this matches on the right characters
 
-	bind g __vi_mode_g
+	bind g __vi_mode_g # MUST BE AFTER BIND_DIRECTIONS... I'm thinking about changing it so that this is all handled by bind_directions
 	bind u __vi_mode_undo
 
 	# NOT IMPLEMENTED:

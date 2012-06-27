@@ -13,6 +13,10 @@
 #         printf '%s@%s%s%s%s [%s]> ' (whoami) (hostname|cut -d . -f 1) (set_color $fish_color_cwd) (prompt_pwd) (set_color normal) $vi_mode
 # end
 
+# I'm thinking about changing these to separate out the colours from the text.
+# I'm undecided on this though - when I support count arguments there may be
+# some benefit from displaying the count here, but that would also make the
+# size of these strings vary, which I'd rather not do...
 set -l cn (set_color normal)
 set -g vi_mode_normal  (set_color blue)'n'$cn
 set -g vi_mode_replace (set_color red)'r'$cn
@@ -21,6 +25,9 @@ set -g vi_mode_insert  (set_color green)'i'$cn
 set -g vi_mode_delete  (set_color red)'d'$cn
 set -g vi_mode_change  (set_color yellow)'c'$cn
 set -g vi_mode_g       (set_color blue)'g'$cn
+set -g vi_mode_lower   (set_color blue)'u'$cn
+set -g vi_mode_upper   (set_color blue)'U'$cn
+set -g vi_mode_swapcase (set_color blue)'~'$cn
 
 set -g __vi_mode_undo_cmdline ''
 set -g __vi_mode_undo_cmdline_pos 0
@@ -169,6 +176,18 @@ def cmd_O():
 	above = '\n'.join(cmdline_list[:lineno])
 	below = '\n'.join(cmdline_list[lineno:])
 	return (above + '\n\n' + below, len(above)+1)
+
+def _dir_cmd_func(func):
+	(pos1, pos2) = (pos, dir(direction))
+	if pos2 < pos:
+		(pos1, pos2) = (pos2, pos1)
+	new_cmdline = cmdline[:pos1] + func(cmdline[pos1:pos2]) + cmdline[pos2:]
+	return (new_cmdline, pos1)
+
+# XXX: automagic completion sometimes hides the results of changing the case in these commands:
+def cmd_upper(): return _dir_cmd_func(str.upper)
+def cmd_lower(): return _dir_cmd_func(str.lower)
+def cmd_swapcase():  return _dir_cmd_func(str.swapcase)
 
 def dir(d, cursor = False):
 	a = ()
@@ -350,6 +369,10 @@ function __vi_mode_g -d "vi-like key bindings for fish (commands starting with g
 	__vi_mode_common
 
 	bind I '__vi_mode_save_cmdline; commandline -f beginning-of-line; vi_mode_insert'
+	# XXX: automagic completion sometimes hides the results of changing the case in these commands:
+	bind u '__vi_mode_bind_directions lower __vi_mode_normal __vi_mode_save_cmdline'
+	bind U '__vi_mode_bind_directions upper __vi_mode_normal __vi_mode_save_cmdline'
+	bind \~ '__vi_mode_bind_directions swapcase __vi_mode_normal __vi_mode_save_cmdline'
 	# TODO: The rest of the g commands + directions.
 
 	__vi_mode_bind_directions_g normal __vi_mode_normal ''
@@ -390,6 +413,14 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind s '__vi_mode_save_cmdline; commandline -f delete-char; vi_mode_insert'
 	bind r __vi_mode_replace
 	bind R __vi_mode_overwrite
+
+	# XXX: The automagic completion sometimes displays the case from the
+	# command it wants to complete instead of the case actually on the
+	# commandline, so even though this works, it may not always appear to work.
+	# I'm not sure if I can do anything about that, I'll need to look at the
+	# code. Ideally I would turn off automagic completion whenever I'm not in
+	# insert mode.
+	bind \~ '__vi_mode_save_cmdline; __vi_mode_direction_command swapcase l'
 
 	__vi_mode_bind_directions normal __vi_mode_normal ''
 	bind d '__vi_mode_bind_directions delete __vi_mode_normal __vi_mode_save_cmdline'

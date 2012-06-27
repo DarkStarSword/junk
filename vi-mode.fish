@@ -3,6 +3,8 @@
 # To use this script, put it somewhere fish can find and add the following
 # lines to your ~/.config/fish/config.fish:
 #
+# . /path/to/vi-mode.fish
+#
 # function fish_user_keybindings
 #         vi_mode_insert
 # end

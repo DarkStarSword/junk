@@ -85,34 +85,34 @@ def _dir_e(regexp):
 	return (pos+2 + match.start(), -1)
 
 def _dir_b(regexp):
-	# I've had a thought - it might be easier to reverse the string and reuse
-	# the regexp from dir_w rather thank the clunky regexp trying to match from
-	# the right of the string that we use here.
 	import re
 
 	if pos == 0:
 		return start()
 
-	searchpart = cmdline[:pos]
+	# Reverse the string instead of matching to right:
+	searchpart = cmdline[pos-1::-1]
 	match = re.search(regexp, searchpart)
 	if not match:
 		return start()
-	return (match.start()+1, 0)
+	return (len(searchpart) - (match.start()+1), 0)
 
 # Simple, but not inclusive enough:
 # def dir_w(): return _dir_w(r'[^\w]\w')
 # def dir_e(): return _dir_e(r'\w[^\w]')
-# def dir_b(): return _dir_b(r'[^\w]\w+[^\w]*\$') # NOTE: \$ has to be escaped here since we are in a quote inside a fish script
 
 # Slightly too inclusive, e.g. fi--sh matches both '-' characters, but should only match one:
-def dir_w(): return _dir_w(r'[^\w][^\s]|\w[^\w\s]')
-def dir_e(): return _dir_e(r'[^\s][^\w]|[^\w\s]\w')
-# Also, by the time I got to writing this one my brain had already imploded:
-def dir_b(): return _dir_b(r'([^\w][^\s]|\w[^\w\s])\w*[^\w]*\$') # NOTE: \$ has to be escaped here
+_dir_w_regexp = r'[^\w][^\s]|\w[^\w\s]'
+_dir_e_regexp = r'[^\s][^\w]|[^\w\s]\w'
+_dir_W_regexp = r'\s[^\s]'
+_dir_E_regexp = r'[^\s]\s'
 
-def dir_W(): return _dir_w(r'\s[^\s]')
-def dir_E(): return _dir_e(r'[^\s]\s')
-def dir_B(): return _dir_b(r'\s[^\s]+\s*\$') # NOTE: \$ has to be escaped here
+def dir_w(): return _dir_w(_dir_w_regexp)
+def dir_W(): return _dir_w(_dir_W_regexp)
+def dir_e(): return _dir_e(_dir_e_regexp)
+def dir_E(): return _dir_e(_dir_E_regexp)
+def dir_b(): return _dir_b(_dir_e_regexp)
+def dir_B(): return _dir_b(_dir_E_regexp)
 
 def dir_h():
 	if pos: return (pos-1, 0)

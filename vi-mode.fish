@@ -12,6 +12,22 @@
 # function fish_prompt -d "Write out the prompt"
 #         printf '%s@%s%s%s%s [%s]> ' (whoami) (hostname|cut -d . -f 1) (set_color $fish_color_cwd) (prompt_pwd) (set_color normal) $vi_mode
 # end
+#
+#
+#
+# If your version of fish is too old the above may not work. Please ensure that
+# you are running the latest beta fish built from:
+# git://github.com/fish-shell/fish-shell.git
+#
+# If upgrading to that is not an option for you, you can try running:
+# set -U fish_key_bindings vi_mode_insert
+# But please note that as of this writing, these bindings REQUIRE a version of
+# fish somewhat more recent than the latest official release, otherwise using
+# directions will corrupt your commandline.
+#
+###############################################################################
+
+
 
 # I'm thinking about changing these to separate out the colours from the text.
 # I'm undecided on this though - when I support count arguments there may be

@@ -37,7 +37,9 @@ import sys
 command = sys.argv[1]
 direction = sys.argv[2]
 new_pos = pos = int(sys.argv[3])
-cmdline = '\n'.join(sys.argv[4:])
+lineno = int(sys.argv[4])
+cmdline_list = sys.argv[5:]
+cmdline = '\n'.join(cmdline_list)
 
 def start():
 	return (0, 0)
@@ -137,6 +139,16 @@ def cmd_delete():
 	return (new_cmdline, dst_pos)
 cmd_change = cmd_delete
 
+def cmd_o():
+	above = '\n'.join(cmdline_list[:lineno])
+	below = '\n'.join(cmdline_list[lineno:])
+	return (above + '\n\n' + below, len(above)+1)
+
+def cmd_O():
+	above = '\n'.join(cmdline_list[:lineno-1])
+	below = '\n'.join(cmdline_list[lineno-1:])
+	return (above + '\n\n' + below, len(above)+1)
+
 def dir(d, cursor = False):
 	a = ()
 	if ':' in d:
@@ -159,7 +171,7 @@ except not_found:
 	new_pos = pos
 print ( new_pos )
 
-" $argv[1] $argv[2] (commandline -C) (commandline)) # commandline should always be last
+" $argv[1] $argv[2] (commandline -C) (commandline -L) (commandline)) # commandline should always be last
 
 	set new_pos $ret[-1]
 	set -e ret[-1] # Guessing that deleting last element is likely to be faster than deleting first
@@ -332,6 +344,8 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	bind I '__vi_mode_save_cmdline; __vi_mode_direction_command normal fnw; vi_mode_insert'
 	bind a '__vi_mode_save_cmdline; commandline -f forward-char; vi_mode_insert'
 	bind A '__vi_mode_save_cmdline; commandline -f end-of-line; vi_mode_insert'
+	bind o '__vi_mode_save_cmdline; __vi_mode_direction_command o ""; vi_mode_insert'
+	bind O '__vi_mode_save_cmdline; __vi_mode_direction_command O ""; vi_mode_insert'
 
 	# Cool, these functions are pretty close to what I wanted:
 	# FIXME: Cursor not placed in correct position, but moving it prevents further searching

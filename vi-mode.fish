@@ -392,6 +392,10 @@ function __vi_mode_g -d "vi-like key bindings for fish (commands starting with g
 	# TODO: The rest of the g commands + directions.
 
 	__vi_mode_bind_directions_g normal __vi_mode_normal ''
+
+	if functions -q vi_mode_user
+		vi_mode_user g
+	end
 end
 
 function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"

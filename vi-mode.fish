@@ -206,13 +206,17 @@ def cmd_lower(): return _dir_cmd_func(str.lower)
 def cmd_swapcase():  return _dir_cmd_func(str.swapcase)
 
 def dir(d, cursor = False):
+	def validate(pos):
+		if pos < 0: return 0
+		if pos > len(cmdline): return len(cmdline)
+		return pos
 	a = ()
 	if ':' in d:
 		(d, a) = d.split(':', 1)
 	(new_pos, cursor_off) = globals()['dir_%s' % d](*a)
 	if cursor:
-		return new_pos + cursor_off
-	return new_pos
+		return validate(new_pos + cursor_off)
+	return validate(new_pos)
 
 def cmd(c): return globals()['cmd_%s' % c]()
 

@@ -183,7 +183,21 @@ def cmd_delete():
 		return (new_cmdline, pos)
 	new_cmdline = cmdline[:dst_pos] + cmdline[pos:]
 	return (new_cmdline, dst_pos)
-cmd_change = cmd_delete
+
+def cmd_change():
+	# 'Special case: 'cw' and 'cW' are treated like 'ce' and 'cE' if the cursor
+	# is on a non-blank.  This is because 'cw' is interpreted as change-word,
+	# and a word does not include the following white space.'
+	#
+	# Note: Even with this special case the behaviour does not quite match what
+	# vim actually does in practice - try with the cursor on punctuation, or on
+	# the last character in a word. Specifically, the behaviour of cw differs
+	# from ce when the cursor is already on the last character of a 'word', for
+	# vim's definition of word.
+	global direction
+	if direction in 'we' and not cmdline[pos].isspace():
+		direction = direction.replace('w', 'e').replace('W', 'E')
+	return cmd_delete()
 
 def cmd_o():
 	above = '\n'.join(cmdline_list[:lineno + 1])

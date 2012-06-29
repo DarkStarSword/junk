@@ -57,6 +57,8 @@ function __vi_mode_direction_command
 	set ret (python -c "
 
 import sys
+from functools import reduce
+
 command = sys.argv[1]
 direction = sys.argv[2]
 new_pos = pos = int(sys.argv[3])

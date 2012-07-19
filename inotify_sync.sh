@@ -21,9 +21,9 @@ while true; do
 		done
 		echo
 
-		if [ -e .git/rebase-merge ]; then
+		if ls .git/rebase-* 2>/dev/null; then
 			echo Waiting for in progress git rebase to finish...
-			inotifywait -e delete -q -r .git/rebase-merge
+			inotifywait -e delete -q -r .git/rebase-*
 			continue
 		fi
 

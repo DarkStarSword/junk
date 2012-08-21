@@ -3,12 +3,15 @@
 import dbus
 import subprocess
 import sys
+import os
 
 # Replace this with the bluetooth address of the Bluetooth Network Access Point
 dev_bdaddr = '12_34_56_AB_CD_EF'
 
-# dhcp_client = ['/sbin/dhclient', '-v']
-dhcp_client = ['/sbin/udhcpc', '-i']
+dhcp_clients = [
+  ['/sbin/dhclient', '-v'],
+  ['/sbin/udhcpc', '-i'],
+]
 
 def main():
   bus = dbus.SystemBus()
@@ -24,7 +27,12 @@ def main():
   net_interface = adapter_network.Connect('NAP') # 'GN' / 'NAP' ?
   print '%s created' % net_interface
 
-  dhcp = subprocess.Popen(dhcp_client + [net_interface], stdout=sys.stdout)
+  dhcp = None
+  for dhcp_client in dhcp_clients:
+    if os.path.exists(dhcp_client[0]):
+      dhcp = subprocess.Popen(dhcp_client + [net_interface], stdout=sys.stdout)
+  if dhcp is None:
+    print 'Unable to locate DHCP Client'
 
   raw_input('Press enter to close connection\n')
 

@@ -9,7 +9,7 @@ import os
 dev_bdaddr = '12_34_56_AB_CD_EF'
 
 dhcp_clients = [
-  ['/sbin/dhclient', '-v'],
+  ['/sbin/dhclient', '-v', '-d'],
   ['/sbin/udhcpc', '-i'],
 ]
 
@@ -28,16 +28,19 @@ def main():
   print '%s created' % net_interface
 
   dhcp = None
-  for dhcp_client in dhcp_clients:
-    if os.path.exists(dhcp_client[0]):
-      dhcp = subprocess.Popen(dhcp_client + [net_interface], stdout=sys.stdout)
-  if dhcp is None:
-    print 'Unable to locate DHCP Client'
+  try:
+    for dhcp_client in dhcp_clients:
+      if os.path.exists(dhcp_client[0]):
+        dhcp = subprocess.Popen(dhcp_client + [net_interface], stdout=sys.stdout)
+    if dhcp is None:
+      print 'Unable to locate DHCP Client'
 
-  raw_input('Press enter to close connection\n')
+    raw_input('Press enter to close connection\n')
 
-  dhcp.kill()
-  dhcp.wait()
+  finally:
+    if dhcp is not None:
+      dhcp.kill()
+      dhcp.wait()
 
 if __name__ == '__main__':
   main()

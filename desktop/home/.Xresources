@@ -1,8 +1,11 @@
 /* This seemed to get cleared when manually running xrdb ~/.Xresources: */
 *customization: -color
 
- XTerm*.savelines:	10000
-UXTerm*.savelines:	10000
+ XTerm*.metaSendsEscape: true
+UXTerm*.metaSendsEscape: true
+
+ XTerm*.saveLines:	10000
+UXTerm*.saveLines:	10000
 
  XTerm*.background:	MidnightBlue
 UXTerm*.background:	MidnightBlue
@@ -13,3 +16,7 @@ UXTerm*.foreground:	Gold
 			Shift Ctrl <Key>Return:	spawn-new-terminal()
 UXTerm*.translations:	#override \n\
 			Shift Ctrl <Key>Return:	spawn-new-terminal()
+
+/* Allow tmux to set X selection (clipboard) */
+ XTerm*.disallowedWindowOps:	20,21,SetXprop
+UXTerm*.disallowedWindowOps:	20,21,SetXprop

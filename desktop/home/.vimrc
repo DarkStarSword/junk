@@ -80,4 +80,6 @@ endfun
 
 nmap <F9> :call ToggleMarginHighlight()<CR>
 
-source /home/dss/.vim/macros/table.vim
+if filereadable('~/.vim/macros/table.vim')
+	source ~/.vim/macros/table.vim
+endif

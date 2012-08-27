@@ -10,7 +10,7 @@ dev_bdaddr = '12_34_56_AB_CD_EF'
 
 dhcp_clients = [
   ['/sbin/dhclient', '-v', '-d'],
-  ['/sbin/udhcpc', '-i'],
+  ['/sbin/udhcpc', '-f', '-i'],
 ]
 
 def main():

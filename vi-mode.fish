@@ -256,7 +256,9 @@ print ( new_pos )
 	end
 	commandline -C $new_pos
 
-	set -g __vi_mode_last_cmd $argv
+	if [ "$argv[1]" != "normal" ]
+		set -g __vi_mode_last_cmd $argv
+	end
 end
 
 function __vi_mode_repeat_last_dir_cmd

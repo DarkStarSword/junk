@@ -255,6 +255,14 @@ print ( new_pos )
 		commandline -- $ret
 	end
 	commandline -C $new_pos
+
+	set -g __vi_mode_last_cmd $argv
+end
+
+function __vi_mode_repeat_last_dir_cmd
+	if set -q __vi_mode_last_cmd
+		__vi_mode_direction_command $__vi_mode_last_cmd
+	end
 end
 
 function __vi_mode_common_emacs -d "common key bindings for all vi-like modes that are identical to the emacs mode"
@@ -480,6 +488,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 
 	bind g __vi_mode_g # MUST BE AFTER BIND_DIRECTIONS... I'm thinking about changing it so that this is all handled by bind_directions
 	bind u __vi_mode_undo
+	bind . __vi_mode_repeat_last_dir_cmd
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit

@@ -490,7 +490,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 
 	bind g __vi_mode_g # MUST BE AFTER BIND_DIRECTIONS... I'm thinking about changing it so that this is all handled by bind_directions
 	bind u __vi_mode_undo
-	bind . __vi_mode_repeat_last_dir_cmd
+	bind . '__vi_mode_save_cmdline; __vi_mode_repeat_last_dir_cmd'
 
 	# NOT IMPLEMENTED:
 	# bind 2 vi-arg-digit

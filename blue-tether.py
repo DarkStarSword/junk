@@ -68,13 +68,18 @@ def get_config():
 
 class dhcp_client(object):
   def __init__(self, cmd, interface):
-    print 'INIT'
+    import atexit
     self.proc = subprocess.Popen(cmd + [interface], stdout=sys.stdout)
+    atexit.register(self.cleanup)
+
+  def cleanup(self):
+    if self.proc:
+      self.proc.kill()
+      self.proc.wait()
+      self.proc = None
 
   def __del__(self):
-    print 'DEL'
-    self.proc.kill()
-    self.proc.wait()
+    self.cleanup()
 
   @staticmethod
   def exists(cmd):

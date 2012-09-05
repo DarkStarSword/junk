@@ -66,6 +66,26 @@ def get_config():
 
   return opts
 
+class dhcp_client(object):
+  def __init__(self, cmd, interface):
+    print 'INIT'
+    self.proc = subprocess.Popen(cmd + [interface], stdout=sys.stdout)
+
+  def __del__(self):
+    print 'DEL'
+    self.proc.kill()
+    self.proc.wait()
+
+  @staticmethod
+  def exists(cmd):
+    return os.path.exists(cmd[0])
+
+def start_dhcp(interface):
+  for cmd in dhcp_clients:
+    if dhcp_client.exists(cmd):
+      return dhcp_client(cmd, interface)
+  print 'Unable to locate DHCP Client'
+
 def main():
   opts = get_config()
 
@@ -82,20 +102,11 @@ def main():
   net_interface = adapter_network.Connect('NAP') # 'GN' / 'NAP' ?
   print '%s created' % net_interface
 
-  dhcp = None
-  try:
-    for dhcp_client in dhcp_clients:
-      if os.path.exists(dhcp_client[0]):
-        dhcp = subprocess.Popen(dhcp_client + [net_interface], stdout=sys.stdout)
-    if dhcp is None:
-      print 'Unable to locate DHCP Client'
+  dhcp = start_dhcp(net_interface)
 
-    raw_input('Press enter to close connection\n')
+  raw_input('Press enter to close connection\n')
 
-  finally:
-    if dhcp is not None:
-      dhcp.kill()
-      dhcp.wait()
+  del dhcp
 
 if __name__ == '__main__':
   main()

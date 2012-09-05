@@ -17,10 +17,10 @@ dhcp_clients = [
 ]
 
 def process_config_file(opts):
-  file = os.path.expanduser(opts.config)
-  if not os.path.isfile(file):
+  opts.config = os.path.expanduser(opts.config)
+  if not os.path.isfile(opts.config):
     return
-  with open(file, 'r') as f:
+  with open(opts.config, 'r') as f:
     for line in f:
       line = line.split('#', 1)[0].strip()
       if line == '':
@@ -38,6 +38,9 @@ def process_config_file(opts):
 def get_config():
   def check_bdaddr():
     import re
+    if opts.bdaddr is None:
+      raise optparse.OptionValueError(
+          'bdaddr must be specified with -b or in %s' % opts.config)
     if re.match('([0-9a-fA-F]{2}(:(?=.)|$)){6}$', opts.bdaddr) is None:
       raise optparse.OptionValueError('bdaddr in wrong format')
 

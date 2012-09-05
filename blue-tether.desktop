@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Blue Net
+Categories=System;
+Exec=invoker --type=e /usr/bin/meego-terminal -n -e develsh -c /home/user/blue-tether.py
+# Icon=icon-l-terminal
+Icon=icon-m-bluetooth-lan

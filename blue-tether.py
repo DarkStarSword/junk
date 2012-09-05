@@ -4,22 +4,74 @@ import dbus
 import subprocess
 import sys
 import os
+import optparse
 
-# Replace this with the bluetooth address of the Bluetooth Network Access Point
-dev_bdaddr = '12_34_56_AB_CD_EF'
+# Either pass the bluetooth address of the network access point to connect to
+# with the -b flag, or store it in the config file in the form:
+# bdaddr = 00:11:22:AA:BB:CC
+def_config_file = '~/.blue-tether'
 
 dhcp_clients = [
   ['/sbin/dhclient', '-v', '-d'],
   ['/sbin/udhcpc', '-f', '-i'],
 ]
 
+def process_config_file(opts):
+  file = os.path.expanduser(opts.config)
+  if not os.path.isfile(file):
+    return
+  with open(file, 'r') as f:
+    for line in f:
+      line = line.split('#', 1)[0].strip()
+      if line == '':
+        continue
+      try:
+        (opt, val) = map(str.strip, line.split('=', 1))
+      except ValueError:
+        raise optparse.OptionValueError('Badly formatted line in condfig file: %s' % line)
+      try:
+        if getattr(opts, opt) == None:
+          setattr(opts, opt, val)
+      except AttributeError:
+        raise optparse.OptionValueError('Unknown option in config file: %s' % opt)
+
+def get_config():
+  def check_bdaddr():
+    import re
+    if re.match('([0-9a-fA-F]{2}(:(?=.)|$)){6}$', opts.bdaddr) is None:
+      raise optparse.OptionValueError('bdaddr in wrong format')
+
+  parser = optparse.OptionParser()
+  parser.add_option('-b', '--bdaddr',
+    help='Bluetooth address of the network access point to connect to')
+  # Coming soon:
+  # parser.add_option('-r', '--reconnect', type='int', metavar='SECONDS',
+  #   help='Attempt to reconnect every SECONDS if the network goes down')
+  parser.add_option('-c', '--config', default=def_config_file,
+    help='Process this config file (%default)')
+
+  (opts, args) = parser.parse_args()
+
+  if len(args):
+    parser.error('Too many arguments')
+
+  try:
+    process_config_file(opts)
+    check_bdaddr()
+  except optparse.OptionValueError, e:
+    parser.error(e)
+
+  return opts
+
 def main():
+  opts = get_config()
+
   bus = dbus.SystemBus()
   bluez_proxy = bus.get_object('org.bluez', '/')
   bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
   adapter = bluez_manager.DefaultAdapter()
   # adapter_proxy = bus.get_object('org.bluez', adapter)
-  dev_proxy = bus.get_object('org.bluez', '%s/dev_%s' % (adapter, dev_bdaddr))
+  dev_proxy = bus.get_object('org.bluez', '%s/dev_%s' % (adapter, opts.bdaddr.replace(':', '_')))
   adapter_network = dbus.Interface(dev_proxy, 'org.bluez.Network')
   # adapter_introspect = dbus.Interface(dev_proxy, 'org.freedesktop.DBus.Introspectable')
   # print adapter_introspect.Introspect()
@@ -44,3 +96,5 @@ def main():
 
 if __name__ == '__main__':
   main()
+
+# vim:expandtab:ts=2:sw=2

@@ -19,7 +19,7 @@ dhcp_clients = [
   ['/sbin/udhcpc', '-f', '-i'],
 ]
 
-def process_config_file(opts):
+def process_config_file(opts, parser):
   opts.config = os.path.expanduser(opts.config)
   if not os.path.isfile(opts.config):
     return
@@ -31,21 +31,21 @@ def process_config_file(opts):
       try:
         (opt, val) = map(str.strip, line.split('=', 1))
       except ValueError:
-        raise optparse.OptionValueError('Badly formatted line in condfig file: %s' % line)
+        parser.error('Badly formatted line in condfig file: %s' % line)
       try:
         if getattr(opts, opt) == None:
+          val = parser.get_option('--%s'%opt).convert_value(opt, val)
           setattr(opts, opt, val)
       except AttributeError:
-        raise optparse.OptionValueError('Unknown option in config file: %s' % opt)
+        parser.error('Unknown option in config file: %s' % opt)
 
 def get_config():
   def check_bdaddr():
     import re
     if opts.bdaddr is None:
-      raise optparse.OptionValueError(
-          'bdaddr must be specified with -b or in %s' % opts.config)
+      parser.error( 'bdaddr must be specified with -b or in %s' % opts.config)
     if re.match('([0-9a-fA-F]{2}(:(?=.)|$)){6}$', opts.bdaddr) is None:
-      raise optparse.OptionValueError('bdaddr in wrong format')
+      parser.error('bdaddr in wrong format')
 
   parser = optparse.OptionParser()
   parser.add_option('-b', '--bdaddr',
@@ -60,11 +60,8 @@ def get_config():
   if len(args):
     parser.error('Too many arguments')
 
-  try:
-    process_config_file(opts)
-    check_bdaddr()
-  except optparse.OptionValueError, e:
-    parser.error(e)
+  process_config_file(opts, parser)
+  check_bdaddr()
 
   return opts
 
@@ -124,7 +121,7 @@ class BluezNetMonitor(object):
     self.connect()
 
   def property_changed_callback(self, prop, val):
-    print 'Property Changed: %s: %s' % (repr(prop), repr(val))
+    print 'Property Changed: %s: %s' % (prop, val)
     if prop == 'Interface' and val != self.Interface:
       self.down()
     self.props[prop] = val

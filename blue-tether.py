@@ -66,6 +66,7 @@ def get_config():
   return opts
 
 class dhcp_client(object):
+  proc = None # In case of race between __init__ and __del__
   def __init__(self, cmd, interface):
     import atexit
     print 'Starting DHCP client...'
@@ -122,7 +123,7 @@ class BluezNetMonitor(object):
 
   def property_changed_callback(self, prop, val):
     print 'Property Changed: %s: %s' % (prop, val)
-    if prop == 'Interface' and val != self.Interface:
+    if prop == 'Interface' and self.is_up and val != self.Interface:
       self.down()
     self.props[prop] = val
     if prop == 'Connected':

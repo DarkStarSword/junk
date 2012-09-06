@@ -6,6 +6,9 @@ import sys
 import os
 import optparse
 
+from dbus.mainloop.glib import DBusGMainLoop
+import glib, gobject
+
 # Either pass the bluetooth address of the network access point to connect to
 # with the -b flag, or store it in the config file in the form:
 # bdaddr = 00:11:22:AA:BB:CC
@@ -47,9 +50,8 @@ def get_config():
   parser = optparse.OptionParser()
   parser.add_option('-b', '--bdaddr',
     help='Bluetooth address of the network access point to connect to')
-  # Coming soon:
-  # parser.add_option('-r', '--reconnect', type='int', metavar='SECONDS',
-  #   help='Attempt to reconnect every SECONDS if the network goes down')
+  parser.add_option('-r', '--reconnect', type='int', metavar='SECONDS',
+    help='Attempt to reconnect every SECONDS if the network goes down')
   parser.add_option('-c', '--config', default=def_config_file,
     help='Process this config file (%default)')
 
@@ -69,16 +71,19 @@ def get_config():
 class dhcp_client(object):
   def __init__(self, cmd, interface):
     import atexit
+    print 'Starting DHCP client...'
     self.proc = subprocess.Popen(cmd + [interface], stdout=sys.stdout)
     atexit.register(self.cleanup)
 
   def cleanup(self):
     if self.proc:
+      print 'Stopping DHCP client...'
       self.proc.kill()
       self.proc.wait()
       self.proc = None
 
   def __del__(self):
+    print 'DHCP DEL'
     self.cleanup()
 
   @staticmethod
@@ -91,27 +96,116 @@ def start_dhcp(interface):
       return dhcp_client(cmd, interface)
   print 'Unable to locate DHCP Client'
 
+
+class BluezNetMonitor(object):
+  def __init__(self, bus, bd_path, main_loop, reconnect = None):
+    self.bus = bus
+    self.bd_path = bd_path
+    self.main_loop = main_loop
+    self.reconnect = reconnect
+
+    self.props = {
+        'Connected': 0,
+        'Interface': '',
+        'UUID': '',
+      }
+    self.Connected = property(lambda: self.props['Connected'], lambda x: self.props.__setitem__('Connected', x))
+    self.Interface = property(lambda: self.props['Interface'], lambda x: self.props.__setitem__('Interface', x))
+
+    self.dhcp = None
+    self.is_up = False
+
+    self.dev_proxy = self.bus.get_object('org.bluez', self.bd_path)
+    self.dev_network = dbus.Interface(self.dev_proxy, 'org.bluez.Network')
+
+    bus.add_signal_receiver(self.property_changed_callback, 'PropertyChanged',
+        'org.bluez.Network', None, bd_path)
+
+    self.connect()
+
+  def property_changed_callback(self, prop, val):
+    print 'Property Changed: %s: %s' % (repr(prop), repr(val))
+    if prop == 'Interface' and val != self.Interface:
+      self.down()
+    self.props[prop] = val
+    if prop == 'Connected':
+      val and self.up()
+      val or self.down()
+
+  def up(self):
+    if self.is_up:
+      print 'ALREADY UP'
+      return
+    print 'UP'
+    self.is_up = True
+    assert(self.dhcp is None)
+    self.dhcp = start_dhcp(self.Interface)
+
+  def down(self):
+    if self.is_up == False:
+      print 'ALREADY DOWN'
+      return
+    print 'DOWN'
+    self.is_up = False
+    if self.dhcp is not None:
+      self.dhcp.cleanup()
+      self.dhcp = None
+    self.no_connection()
+
+  def no_connection(self):
+    if self.reconnect is None:
+      print 'Auto reconnect disabled, quitting...'
+      self.main_loop.quit()
+    else:
+      print 'Will retry every %d seconds' % self.reconnect
+      glib.timeout_add(self.reconnect * 1000, self._connect)
+
+  def _connect(self):
+    print 'Connecting...'
+    try:
+      self.Interface = self.dev_network.Connect('NAP') # 'GN' / 'NAP' ?
+      print '%s created' % self.Interface
+      return 0
+    except dbus.exceptions.DBusException, e:
+      print 'Error Connecting: %s' % e
+      if self.reconnect is None:
+        raise
+      return 1
+
+  def connect(self):
+    ret = self._connect()
+    if ret: self.no_connection()
+    return ret
+
 def main():
   opts = get_config()
+
+  #dbus.glib.threads_init()
+  #glib.theads_init()
+
+  bus_loop = DBusGMainLoop(set_as_default = True)
+  main_loop = glib.MainLoop()
 
   bus = dbus.SystemBus()
   bluez_proxy = bus.get_object('org.bluez', '/')
   bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
   adapter = bluez_manager.DefaultAdapter()
-  # adapter_proxy = bus.get_object('org.bluez', adapter)
-  dev_proxy = bus.get_object('org.bluez', '%s/dev_%s' % (adapter, opts.bdaddr.replace(':', '_')))
-  adapter_network = dbus.Interface(dev_proxy, 'org.bluez.Network')
-  # adapter_introspect = dbus.Interface(dev_proxy, 'org.freedesktop.DBus.Introspectable')
-  # print adapter_introspect.Introspect()
-  # print adapter_network.Disconnect()
-  net_interface = adapter_network.Connect('NAP') # 'GN' / 'NAP' ?
-  print '%s created' % net_interface
 
-  dhcp = start_dhcp(net_interface)
+  bd_path = '%s/dev_%s' % (adapter, opts.bdaddr.replace(':', '_'))
 
-  raw_input('Press enter to close connection\n')
+  def input_callback(*args):
+    # print 'INPUT: %s' % repr(args)
+    main_loop.quit()
+    return True # What return value signifies what?
 
-  del dhcp
+  glib.io_add_watch(sys.stdin, glib.IO_IN, input_callback)
+  try:
+    bluez_net_monitor = BluezNetMonitor(bus, bd_path, main_loop, opts.reconnect)
+  except dbus.exceptions.DBusException, e:
+    return 1
+
+  print 'Press enter to close connection'
+  main_loop.run()
 
 if __name__ == '__main__':
   main()

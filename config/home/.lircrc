@@ -1,0 +1,114 @@
+# defaults:
+#
+# remote = *
+# repeat = 0
+
+# MacMote bindings for MythTV
+# These will work with the default keyboard bindings for MythTV... It might be
+# nice to configure MythTV so that the keys do different sensible things in
+# different modes automatically (e.g. up in menu moves up, but in playback it
+# increases the volume) instead, but this works.
+#
+# The menu button switches modes:
+
+# NAVIGATE:  up
+#            ^
+# esc <-- enter --> right
+#           |
+#          down
+
+# PLAYBACK:    vol up
+#                 ^
+# seek back <-- pause --> seek forward
+#                 |
+#              vol down
+
+# irexec --name mythtv for testing these rules
+# irw for testing remote via lirc
+# hexdump -v /dev/usb/hiddev0 for testing remote raw
+
+# MythTV
+begin
+	prog = mythtv
+	flags = startup_mode
+	mode = navigate
+end
+begin navigate
+	begin
+		prog = mythtv
+		button = VOL_UP
+		repeat = 2
+		config = Up
+	end
+	begin
+		prog = mythtv
+		button = VOL_DOWN
+		repeat = 2
+		config = Down
+	end
+	begin
+		prog = mythtv
+		button = PLAY_PAUSE
+		repeat = 2
+		#delay = 4
+		config = Enter
+	end
+	begin
+		prog = mythtv
+		button = PREV
+		repeat = 2
+		#config = Left
+		config = Escape
+	end
+	begin
+		prog = mythtv
+		button = NEXT
+		repeat = 2
+		config = Right
+	end
+	begin
+		prog = mythtv
+		button = MENU
+		mode = playback
+		flags = quit
+	end
+end navigate
+begin playback
+	begin
+		prog = mythtv
+		button = VOL_UP
+		repeat = 2
+		config = ]
+	end
+	begin
+		prog = mythtv
+		button = VOL_DOWN
+		repeat = 2
+		config = [
+	end
+	begin
+		prog = mythtv
+		button = PLAY_PAUSE
+		repeat = 2
+		#delay = 4
+		config = Space
+	end
+	begin
+		prog = mythtv
+		button = PREV
+		repeat = 2
+		config = Left
+	end
+	begin
+		prog = mythtv
+		button = NEXT
+		repeat = 2
+		config = Right
+	end
+	begin
+		prog = mythtv
+		button = MENU
+		mode = navigate
+		flags = quit
+	end
+end playback

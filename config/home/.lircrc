@@ -27,6 +27,14 @@
 # irw for testing remote via lirc
 # hexdump -v /dev/usb/hiddev0 for testing remote raw
 
+# Thanks to the delay/repeat we might miss double tapping as lirc thinks the
+# button is being held down. In this regard it's a shame that lirc isn't more
+# intelligent - the MacMote actually only blasts the button code when it is
+# first pressed, then continually blasts a generic repeat code as long as it is
+# held down, making it trivial to distinguish between the two, but lirc is
+# designed with standard IR remotes in mind so AFAICT it doesn't do that.
+# Possibly there is some option I've missed?
+
 # MythTV
 begin
 	prog = mythtv
@@ -77,13 +85,15 @@ begin playback
 	begin
 		prog = mythtv
 		button = VOL_UP
-		repeat = 2
+		repeat = 1
+		delay = 4
 		config = ]
 	end
 	begin
 		prog = mythtv
 		button = VOL_DOWN
-		repeat = 2
+		repeat = 1
+		delay = 4
 		config = [
 	end
 	begin

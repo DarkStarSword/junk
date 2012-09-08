@@ -13,7 +13,7 @@
 
 # NAVIGATE:  up
 #            ^
-# esc <-- enter --> right
+# esc <-- enter --> M
 #           |
 #          down
 
@@ -72,7 +72,7 @@ begin navigate
 		prog = mythtv
 		button = NEXT
 		repeat = 2
-		config = Right
+		config = M
 	end
 	begin
 		prog = mythtv

@@ -1,0 +1,60 @@
+From 4e50b5f74704858e527b9fada2a7f1a307353b74 Mon Sep 17 00:00:00 2001
+From: Ian Munsie <darkstarsword@gmail.com>
+Date: Sat, 8 Sep 2012 23:11:16 +1000
+Subject: [PATCH] Workaround Donkey Kong Country 2 Spinning Barrel Bug
+
+Hardcode registers 0x2000 and 0x2001 to return 0x20 as suggested by
+anomie here:
+
+http://board.zsnes.com/phpBB3/viewtopic.php?f=3&t=2504&start=0
+
+Quote from that page:
+
+> pagefault knows this already (from IRC), but for the rest of you...
+>
+> The problem is that the game reads an open bus register, at
+> $2000-$2001, and expects certain bits to be set in the result. It only
+> works on the real SNES accidentally, while zsnes returns 0 for these
+> unmapped registers and breaks the game.
+>
+> A quick fix would be to return 0x20 from both registers, since they're
+> most likely to be accessed as "LDX $2000" (rather than say "LDA
+> $002000" or "PEA $2000 / PLD / LDX $00"). A real fix would involve
+> implementing open bus, at least for the commonest case of data reads
+> like this (opcode fetch from open bus is much more involved and much
+> less common).
+>
+> BTW, history: This worked for a long time in snes9x due to an
+> uninitialized stack variable. Then we started initializing it (to 0,
+> like zsnes), and the game broke. Then we hacked it much as above, then
+> we fixed it...
+---
+ src/cpu/memory.asm |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/cpu/memory.asm b/src/cpu/memory.asm
+index 11f8f20..71a5a87 100644
+--- a/src/cpu/memory.asm
++++ b/src/cpu/memory.asm
+@@ -117,6 +117,8 @@ NEWSYM regaccessbankr16
+ .notopenbus
+     ret
+ .regs
++    cmp ecx,2001h
++    jbe .dkc2workaround
+     cmp ecx,48FFh
+     ja .invaccess
+ ;    mov ebx,ecx
+@@ -183,6 +185,9 @@ NEWSYM regaccessbankr16
+     xor ebx,ebx
+     pop ecx
+     ret
++.dkc2workaround ; Donkey Kong Country 2 Spinning barrel bug workaround
++    mov al,0x20
++    ret
+ 
+ NEWSYM regaccessbankw8
+     test ecx,8000h
+-- 
+1.7.10.4
+

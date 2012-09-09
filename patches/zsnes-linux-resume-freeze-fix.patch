@@ -1,0 +1,130 @@
+From 2c29409f6c7dd7cbacd7027b4afcc08546fa7a66 Mon Sep 17 00:00:00 2001
+From: Ian Munsie <darkstarsword@gmail.com>
+Date: Mon, 10 Sep 2012 03:51:13 +1000
+Subject: [PATCH] Replace floating point arithmetic causing freeze with 64bit
+ integer arithmetic
+
+It seems that sem_GetTicks sometimes returns NAN. If this happens when
+resuming the game (i.e. from Start60HZ), than the start variable can be
+set to NAN, which causes this test in CheckTimers to never succeed:
+while ((end - start) >= update_ticks_pc)
+
+So it never runs Game60hzcall and therefore appears to freeze.
+
+Using gdb to change start to a real number less than end allows zsnes to
+continue.
+
+See this forum post for more details:
+http://board.zsnes.com/phpBB3/viewtopic.php?f=3&t=2337&p=225071#p225071
+
+This patch changes it to use a 64bit integer instead of floating point
+arithmetic to avoid hitting these cases.
+
+Also, remove the unused start2, end2, and update_ticks_pc2 variables.
+
+Signed-off-by: Ian Munsie <darkstarsword@gmail.com>
+---
+ src/linux/sdllink.c |   35 ++++++++++++-----------------------
+ 1 file changed, 12 insertions(+), 23 deletions(-)
+
+diff --git a/src/linux/sdllink.c b/src/linux/sdllink.c
+index 4274c9d..eece048 100644
+--- a/src/linux/sdllink.c
++++ b/src/linux/sdllink.c
+@@ -111,23 +111,23 @@ static BYTE IsActivated = 1;
+ 
+ /* TIMER VARIABLES/MACROS */
+ // millisecond per world update
+-#define UPDATE_TICKS_GAME (1000.0/59.948743718592964824120603015060)
+-#define UPDATE_TICKS_GAMEPAL (20.0)
+-#define UPDATE_TICKS_GUI (1000.0/36.0)
+-#define UPDATE_TICKS_UDP (1000.0/60.0)
++#define UPDATE_TICKS_GAME (1000000.0/59.948743718592964824120603015060)
++#define UPDATE_TICKS_GAMEPAL (20000)
++#define UPDATE_TICKS_GUI (1000000/36)
++#define UPDATE_TICKS_UDP (1000000/60)
+ 
+ int T60HZEnabled = 0;
+ int T36HZEnabled = 0;
+-float end, end2;
+-float start, start2;
+-float update_ticks_pc, update_ticks_pc2;
++unsigned long long end;
++unsigned long long start;
++unsigned long long update_ticks_pc;
+ 
+ // Used for semaphore code
+ static SDL_sem *sem_frames = NULL;
+ static struct timeval sem_start;
+ void sem_sleep_rdy(void);
+ void sem_sleep_die(void);
+-float sem_GetTicks(void);
++unsigned long long sem_GetTicks(void);
+ 
+ extern unsigned char romispal;
+ 
+@@ -830,7 +830,6 @@ int startgame()
+ 
+ void Start60HZ(void)
+ {
+-  update_ticks_pc2 = UPDATE_TICKS_UDP;
+   if (romispal == 1)
+   {
+     update_ticks_pc = UPDATE_TICKS_GAMEPAL;
+@@ -842,7 +841,6 @@ void Start60HZ(void)
+ 
+   // Restore timer data from semaphore data
+   start = sem_GetTicks();
+-  start2 = sem_GetTicks();
+   T36HZEnabled = 0;
+   T60HZEnabled = 1;
+ }
+@@ -854,12 +852,10 @@ void Stop60HZ(void)
+ 
+ void Start36HZ(void)
+ {
+-  update_ticks_pc2 = UPDATE_TICKS_UDP;
+   update_ticks_pc = UPDATE_TICKS_GUI;
+ 
+   // Restore timer data from semaphore data
+   start = sem_GetTicks();
+-  start2 = sem_GetTicks();
+   T60HZEnabled = 0;
+   T36HZEnabled = 1;
+ }
+@@ -1097,14 +1093,6 @@ void initwinvideo(void)
+ 
+ void CheckTimers(void)
+ {
+-  //QueryPerformanceCounter((LARGE_INTEGER*)&end2);
+-  end2 = sem_GetTicks();
+-
+-  while ((end2 - start2) >= update_ticks_pc2)
+-  {
+-    start2 += update_ticks_pc2;
+-  }
+-
+   if (T60HZEnabled)
+   {
+     //QueryPerformanceCounter((LARGE_INTEGER*)&end);
+@@ -1306,13 +1294,14 @@ void __attribute__ ((stdcall, constructor)) sem_StartTicks()
+   gettimeofday(&sem_start, NULL);
+ }
+ 
+-float sem_GetTicks()
++unsigned long long sem_GetTicks()
+ {
+   struct timeval now;
+-  float ticks;
++  unsigned long long ticks;
+ 
+   gettimeofday(&now, NULL);
+-  ticks=((float)(now.tv_sec-sem_start.tv_sec))*1000.f+((float)(now.tv_usec-sem_start.tv_usec))*.001f;
++  ticks = (now.tv_sec - sem_start.tv_sec) * 1000000 +
++	  (now.tv_usec - sem_start.tv_usec);
+   return(ticks);
+ }
+ 
+-- 
+1.7.10.4
+

@@ -27,7 +27,7 @@ git add -A $(git rev-parse --show-toplevel) # Otherwise it's only subdirectories
 git commit -m git_remote_build_working_tree_state
 working_tree_state=$(git rev-parse HEAD)
 
-git branch -f "$deploy_commit"
+git branch -f "$deploy_commit" "$working_tree_state"
 
 git reset --mixed $index_state
 git reset --soft $last_commit

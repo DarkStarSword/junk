@@ -6,6 +6,7 @@ chrootsu=1
 chrootuser= # autodetect
 chrootuser_grant_sudo=1
 chrootshell="$SHELL"
+chroot_pre_cmd=
 
 # In bash style, we do some simple transformations for other shells
 chrootPS1='\[[1;36m\][chroot]\[[0m\]\w \[[36m\]\$\[[0m\] '
@@ -218,10 +219,11 @@ enter_chroot()
 		# FIXME: This no longer gives a TTY (damn moving parts):
 		# chroot "$chroot" su $chrootuser -l -s "$chrootshell" -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $chrootshell"
 		# Workaround:
-		chroot "$chroot" su $chrootuser -l -s "$chrootshell"
+		$chroot_pre_cmd chroot "$chroot" su $chrootuser -l -s "$chrootshell"
 	else
 		echo "Entering $chroot..."
-		chroot "$chroot" su -l -c "env PS1='$chrootPS1root' $chrootshell"
+		# chroot "$chroot" su -l -c "env PS1='$chrootPS1root' $chrootshell"
+		$chroot_pre_cmd chroot "$chroot" su -l
 	fi
 }
 

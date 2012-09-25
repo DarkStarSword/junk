@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # vi:sw=2:ts=2:noexpandtab:nowrap
 
 chroot=
@@ -215,7 +215,10 @@ enter_chroot()
 {
 	if [ -n "$chrootuser" ]; then
 		echo "Entering $chroot as $chrootuser..."
-		chroot "$chroot" su $chrootuser -l -s "$chrootshell" -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $chrootshell"
+		# FIXME: This no longer gives a TTY (damn moving parts):
+		# chroot "$chroot" su $chrootuser -l -s "$chrootshell" -c "env PS1='$chrootPS1' SUDO_PS1='$chrootPS1root' $chrootshell"
+		# Workaround:
+		chroot "$chroot" su $chrootuser -l -s "$chrootshell"
 	else
 		echo "Entering $chroot..."
 		chroot "$chroot" su -l -c "env PS1='$chrootPS1root' $chrootshell"

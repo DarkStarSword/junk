@@ -1,9 +1,13 @@
 #!/bin/sh
 
+cd $(git rev-parse --show-toplevel)
+
 if [ ! -d .git ]; then
-	echo Run me in the root of a git tree
+	echo Run me in a git tree!
 	exit 1
 fi
+
+echo "Monitoring $(pwd)"
 
 while true; do
 	# [0-9]+ here is to ignore some weird files that vim seems to create

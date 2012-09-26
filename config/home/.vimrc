@@ -10,6 +10,8 @@ set autoindent
 filetype plugin indent on
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 set showmatch
+set showcmd
+set incsearch
 set autowrite
 setlocal spell spelllang=en_au
 set spell

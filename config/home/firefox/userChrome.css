@@ -1,0 +1,30 @@
+/*
+ * Edit this file and copy it as userChrome.css into your
+ * profile-directory/chrome/
+ */
+
+/*
+ * This file can be used to customize the look of Mozilla's user interface
+ * You should consider using !important on rules which you want to
+ * override default settings.
+ */
+
+/*
+ * Do not remove the @namespace line -- it's required for correct functioning
+ */
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"); /* set default namespace to XUL */
+
+/* See: http://thinkmoult.com/2009/02/24/tech-tip-speed-up-firefox-to-use-less-cpu/ */
+
+/* Eliminate the throbber and its annoying movement */
+/* #throbber-box {
+ * 	display: none !important;
+ * }
+ */
+
+/* Remove tab loading indicator while the tab is loading
+ * I had to use DOM Inspector to find the new name for .tab-throbber -Ian
+ */
+.tabbrowser-tabs *|tab[busy] .tab-throbber {
+	display: none !important;
+}

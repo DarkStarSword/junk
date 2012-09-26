@@ -464,7 +464,7 @@ function __vi_mode_normal -d "WIP vi-like key bindings for fish (normal mode)"
 	# I'm not sure if I can do anything about that, I'll need to look at the
 	# code. Ideally I would turn off automagic completion whenever I'm not in
 	# insert mode.
-	bind \~ '__vi_mode_save_cmdline; __vi_mode_direction_command swapcase l'
+	bind \~ '__vi_mode_save_cmdline; commandline -f forward-char; __vi_mode_direction_command swapcase l'
 
 	__vi_mode_bind_directions normal __vi_mode_normal ''
 	bind d '__vi_mode_bind_directions delete __vi_mode_normal __vi_mode_save_cmdline'

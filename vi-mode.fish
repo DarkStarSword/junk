@@ -153,6 +153,8 @@ def dir_b(): return _dir_b(_dir_e_regexp)
 def dir_B(): return _dir_b(_dir_E_regexp)
 def dir_ge(): return _dir_ge(_dir_w_regexp)
 def dir_gE(): return _dir_ge(_dir_W_regexp)
+def dir_cw(): return _dir_w(_dir_e_regexp)
+def dir_cW(): return _dir_w(_dir_E_regexp)
 
 def dir_h():
 	if pos: return (pos-1, 0)
@@ -194,9 +196,11 @@ def cmd_change():
 	# the last character in a word. Specifically, the behaviour of cw differs
 	# from ce when the cursor is already on the last character of a 'word', for
 	# vim's definition of word.
+	#
+	# Because of this, we use a special direction to handle this case.
 	global direction
-	if direction in 'we' and not cmdline[pos].isspace():
-		direction = direction.replace('w', 'e').replace('W', 'E')
+	if direction in 'wW' and not cmdline[pos].isspace():
+		direction = direction.replace('w', 'cw').replace('W', 'cW')
 	return cmd_delete()
 
 def cmd_o():

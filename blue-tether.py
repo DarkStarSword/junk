@@ -189,7 +189,7 @@ def main():
   bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
   adapter = bluez_manager.DefaultAdapter()
 
-  bd_path = '%s/dev_%s' % (adapter, opts.bdaddr.replace(':', '_'))
+  bd_path = '%s/dev_%s' % (adapter, opts.bdaddr.upper().replace(':', '_'))
 
   def input_callback(*args):
     # print 'INPUT: %s' % repr(args)

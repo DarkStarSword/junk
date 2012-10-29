@@ -14,7 +14,7 @@ while true; do
 	# and delete before doing it's actual save/backup dance. Now that I
 	# explicitly wait for the filesystem to settle I could probably remove
 	# it pretty safely.
-	inotifywait -e close_write -q -r --exclude '.*\.swp?x?|[0-9]+|\.git' .
+	inotifywait -e close_write -q -r --exclude '.*\.swp?x?$|/[0-9]+$|/\.git/' .
 
 	while true; do
 

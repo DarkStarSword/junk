@@ -1,22 +1,17 @@
 /* This seemed to get cleared when manually running xrdb ~/.Xresources: */
 *customization: -color
 
- XTerm*.metaSendsEscape: true
-UXTerm*.metaSendsEscape: true
+*.VT100.metaSendsEscape: true
 
- XTerm*.saveLines:	10000
-UXTerm*.saveLines:	10000
+*.VT100.saveLines:	10000
 
- XTerm*.background:	MidnightBlue
-UXTerm*.background:	MidnightBlue
- XTerm*.foreground:	Gold
-UXTerm*.foreground:	Gold
+*.VT100.background:	MidnightBlue
+*.VT100.foreground:	Gold
 
- XTerm*.translations:	#override \n\
-			Shift Ctrl <Key>Return:	spawn-new-terminal()
-UXTerm*.translations:	#override \n\
-			Shift Ctrl <Key>Return:	spawn-new-terminal()
+*.VT100.translations:	#override \n\
+			Shift Ctrl <Key>Return:		spawn-new-terminal() \n\
+			Shift <KeyPress>KP_Insert:	insert-selection(SELECT, CUT_BUFFER0) \n\
+			Shift <KeyPress>KP_0:		insert-selection(SELECT, CUT_BUFFER0)
 
 /* Allow tmux to set X selection (clipboard) */
- XTerm*.disallowedWindowOps:	20,21,SetXprop
-UXTerm*.disallowedWindowOps:	20,21,SetXprop
+*.VT100.disallowedWindowOps:	20,21,SetXprop

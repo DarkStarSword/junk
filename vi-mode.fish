@@ -5,7 +5,10 @@
 #
 # . /path/to/vi-mode.fish
 #
-# function fish_user_keybindings
+# function fish_user_keybindings # Deprecated
+#         vi_mode_insert
+# end
+# function fish_user_key_bindings
 #         vi_mode_insert
 # end
 #

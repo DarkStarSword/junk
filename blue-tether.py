@@ -48,6 +48,8 @@ def get_config():
       parser.error('bdaddr in wrong format')
 
   parser = optparse.OptionParser()
+  parser.add_option('-a', '--adapter',
+    help='Which bluetooth adapter to use if more than one are available')
   parser.add_option('-b', '--bdaddr',
     help='Bluetooth address of the network access point to connect to')
   parser.add_option('-r', '--reconnect', type='int', metavar='SECONDS',
@@ -187,7 +189,10 @@ def main():
   bus = dbus.SystemBus()
   bluez_proxy = bus.get_object('org.bluez', '/')
   bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
-  adapter = bluez_manager.DefaultAdapter()
+  if opts.adapter is not None:
+    adapter = bluez_manager.FindAdapter(opts.adapter)
+  else:
+    adapter = bluez_manager.DefaultAdapter()
 
   bd_path = '%s/dev_%s' % (adapter, opts.bdaddr.upper().replace(':', '_'))
 

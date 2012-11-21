@@ -1,21 +1,21 @@
 #!/bin/sh
 
-function is_clean()
+is_clean()
 {
 	test $(git ls-files -dmo "$toplevel"|wc -l) -eq 0
 }
 
-function get_reject_files()
+get_reject_files()
 {
 	git ls-files -o "$toplevel/*.rej"
 }
 
-function get_modified_files()
+get_modified_files()
 {
 	git ls-files -m "$toplevel"
 }
 
-function hunk_lineno()
+hunk_lineno()
 {
 	patch="$1"
 	awk '/^@@/ {print $2}' "$patch" | cut -d, -f 1 | cut -d- -f 2 | head -n 1

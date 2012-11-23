@@ -16,6 +16,9 @@
 /* Allow tmux to set X selection (clipboard) */
 *.VT100.disallowedWindowOps:	20,21,SetXprop
 
-/* Just giving this a try for now */
+/* Just giving these a try for now */
 *.VT100.scrollKey:		true
 *.VT100.scrollTtyOutput:	false
+*.VT100.jumpScroll:		true /* default, needed for fast scroll */
+*.VT100.fastScroll:		true /* jump scroll faster for > 1 screen */
+*.VT100.multiScroll:		true /* supposed to be good for high latency */

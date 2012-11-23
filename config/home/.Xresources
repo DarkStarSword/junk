@@ -15,3 +15,7 @@
 
 /* Allow tmux to set X selection (clipboard) */
 *.VT100.disallowedWindowOps:	20,21,SetXprop
+
+/* Just giving this a try for now */
+*.VT100.scrollKey:		true
+*.VT100.scrollTtyOutput:	false

@@ -2,7 +2,6 @@
 
 import sys
 import depotcache
-from StringIO import StringIO
 
 # The acf files look like a pretty simple format - I wouldn't be surprised if a
 # python parser already exists that can process it (even by chance), but I
@@ -13,7 +12,7 @@ def scan_for_next_token(f):
 		byte = f.read(1)
 		if byte == '':
 			raise EOFError
-		elif byte in ['"', '{']:
+		if not byte.isspace():
 			return byte
 
 def parse_quoted_token(f):
@@ -22,24 +21,8 @@ def parse_quoted_token(f):
 		byte = f.read(1)
 		if byte == '':
 			raise EOFError
-		elif byte == '"':
+		if byte == '"':
 			return ret
-		else:
-			ret += byte
-
-def scan_block(f):
-	ret = ''
-	level = 0
-	while True:
-		byte = f.read(1)
-		if byte == '':
-			raise EOFError
-		if byte == '{':
-			level += 1
-		elif byte == '}':
-			level -= 1
-			if level < 0:
-				return ret
 		ret += byte
 
 class AcfNode(dict):
@@ -49,6 +32,8 @@ class AcfNode(dict):
 				token_type = scan_for_next_token(f)
 			except EOFError:
 				return
+			if token_type == '}':
+				return
 			if token_type != '"':
 				raise TypeError('Error parsing ACF format - missing node name?')
 			name = parse_quoted_token(f)
@@ -57,7 +42,7 @@ class AcfNode(dict):
 			if token_type == '"':
 				self[name] = parse_quoted_token(f)
 			elif token_type == '{':
-				self[name] = AcfNode(StringIO(scan_block(f)))
+				self[name] = AcfNode(f)
 			else:
 				assert(False)
 

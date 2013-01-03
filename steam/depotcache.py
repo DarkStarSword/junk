@@ -4,9 +4,7 @@ import sys
 import struct
 from StringIO import StringIO
 
-print_unknown = True
-
-def pr_unknown(data):
+def pr_unknown(data, print_unknown):
 	if print_unknown:
 		decoded = struct.unpack('%dB' % len(data), data)
 		print '[? ' + ' '.join([ '%.2X' % x for x in decoded ]) + ' ?]'
@@ -54,18 +52,18 @@ def dump_remaining_data(f):
 		print
 		return
 
-def decode_depotcache(filename):
+def decode_depotcache(filename, print_unknown = False):
 	with file(filename, 'r') as f:
 		pr_unexpected(f.read(4), 'D017F671', "Unexpected magic value: ")
-		pr_unknown(f.read(3))
+		pr_unknown(f.read(3), print_unknown)
 		pr_unexpected(f.read(1), '00')
 		while True:
 			byte = struct.unpack('B', f.read(1))[0]
 			if byte == 0x0a:
-				print decode_entry(f)
+				yield decode_entry(f)
 			elif byte == 0xbe:
-				print '0xBE FOUND, ENDING'
 				if print_unknown:
+					print '0xBE FOUND, ENDING'
 					dump_remaining_data(f)
 				return
 			else:
@@ -75,7 +73,8 @@ def decode_depotcache(filename):
 def main():
 	for filename in sys.argv[1:]:
 		print 'Decoding %s...' % filename
-		decode_depotcache(filename)
+		for entry in decode_depotcache(filename, True):
+			print entry
 		print
 
 if __name__ == '__main__':

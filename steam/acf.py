@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import depotcache
 
 # The acf files look like a pretty simple format - I wouldn't be surprised if a
 # python parser already exists that can process it (even by chance), but I
@@ -48,8 +47,7 @@ class AcfNode(dict):
 
 def parse_acf(filename):
 	with file(filename, 'r') as f:
-		root = AcfNode(f)
-	return root
+		return AcfNode(f)
 
 def main():
 	for filename in sys.argv[1:]:

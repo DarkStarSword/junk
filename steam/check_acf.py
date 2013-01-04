@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-import os, optparse
+import os, optparse, glob
 import depotcache, acf
 
 from ui import ui_tty as ui
@@ -19,53 +19,80 @@ def depot_summary_ok(mounted):
 	return False
 
 def str_depot_summary(mounted, managed):
-	return '%i/%i depotcaches mounted' % (len(mounted), len(managed))
+	return '%i/%i depotcaches mounted - Not released on this platform yet?' % (len(mounted), len(managed))
 
 def manifest_filename(depot, timestamp):
 	return '%s_%s.manifest' % (depot, timestamp)
 
-def manifest_path(filename):
-	return os.path.join(os.path.curdir, '../depotcache/%s' % filename)
+def manifest_path(library_root, filename):
+	return os.path.join(library_root, 'depotcache/%s' % filename)
+
+class FilenameSet(set):
+	# It may be more efficient to convert the paths to a tree structure,
+	# but for the moment this is easier.
+	def add(self, element):
+		"""
+		Override add method to ensure all directory components are also
+		added to the set individually.
+		"""
+		set.add(self, element)
+		dirname = os.path.dirname(element)
+		if dirname != '':
+			self.add(dirname)
 
 def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 	ok = True
-	filenames = set()
+	filenames = FilenameSet()
 	for filename in depotcache.decode_depotcache(manifest_path):
 		filename = os.path.join(game_path, filename.replace('\\', os.path.sep))
 		(found, filename, pretty) = insensitive_path(filename, opts)
 		filenames.add(filename)
 		if pretty is not None:
 			ui._print(indent, end='')
-			#ui._cprint('red', filename)
-			ui._print(pretty)
+			ui._print(pretty, end='')
 			if not found:
 				ok = False
+				ui._print(' (FILE MISSING)')
+			else:
+				ui._print(' (CASE MISMATCH, ', end='')
+				if not opts.rename:
+					ui._print('rerun with -r to fix)')
+				else:
+					ui._print('renamed)')
 		elif opts.verbose > 2:
 			ui._print(indent + filename)
 	return (ok, filenames)
 
-def check_depots(mounted_depots, managed_depots, game_path, indent, opts):
+def check_depots_exist(mounted_depots, managed_depots, library_root, indent, opts):
 	ok = True
-	filenames = set()
 	num_mounted = 0
 	for depot in managed_depots:
 		if depot in mounted_depots:
 			num_mounted += 1
 			manifest = manifest_filename(depot, mounted_depots[depot])
-			path = manifest_path(manifest)
-			if os.path.exists(path):
-				if opts.verbose:
-					ui._print('%s%s' % (indent, manifest))
-				(all_files_exist, manifest_filenames) = \
-					verify_manifest_files_exist(path, game_path, indent + g_indent, opts)
-				filenames.update(manifest_filenames)
-				ok = ok and all_files_exist
-			else:
-				ui._cprint('red', '%s%s NOT FOUND!' % (indent, manifest))
+			path = manifest_path(library_root, manifest)
+			if not os.path.exists(path):
+				ui._cprint('red', '%s%s NOT FOUND!' % (indent, manifest), end='')
+				ui._print(' (Verify the game cache and try again)')
 				ok = False
 		elif opts.verbose > 1:
 			ui._print('%s%s (not mounted)' % (indent, depot))
 	assert(num_mounted == len(mounted_depots))
+
+	return ok
+
+def check_all_depot_files_exist(mounted_depots, library_root, game_path, indent, opts):
+	ok = True
+	filenames = set()
+	for depot in mounted_depots:
+		manifest = manifest_filename(depot, mounted_depots[depot])
+		path = manifest_path(library_root, manifest)
+		if opts.verbose:
+			ui._print('%s%s' % (indent, manifest))
+		(all_files_exist, manifest_filenames) = \
+			verify_manifest_files_exist(path, game_path, indent + g_indent, opts)
+		filenames.update(manifest_filenames)
+		ok = ok and all_files_exist
 
 	return (ok, filenames)
 
@@ -89,18 +116,33 @@ def insensitive_path(path, opts):
 					pretty_basename += ui._ctext('back_yellow black', entry[i])
 				else:
 					pretty_basename += entry[i]
-			# TODO: if opts.rename: rename...
+			if opts.rename:
+				os.rename(os.path.join(dirname, entry), os.path.join(dirname, basename))
+				return (True, os.path.join(dirname, basename), os.path.join(pretty_dirname, pretty_basename))
 			return (True, os.path.join(dirname, entry), os.path.join(pretty_dirname, pretty_basename))
 	return (False, path, ui._ctext('back_red black', path))
 
+def find_extra_files(game_path, known_filenames, indent, opts):
+	known_filenames_l = set(map(str.lower, known_filenames))
+	for (root, dirs, files) in os.walk(game_path, topdown = not opts.delete):
+		for fname in dirs + files:
+			path = os.path.join(root, fname)
+			if path in known_filenames:
+				continue
+			ui._print(indent, end='')
+			extra='\n'
+			if opts.delete:
+				extra = ' (DELETED)\n'
+				if fname in dirs:
+					os.rmdir(path)
+				else:
+					os.remove(path)
+			if path.lower() in known_filenames_l:
+				ui._cprint('back_blue yellow', path, end=' (DUPLICATE WITH DIFFERING CASE)%s' % extra)
+			else:
+				ui._cprint('back_blue yellow', path, end=extra)
 
-def check_acf(acf_filename, opts):
-	app_state = acf.parse_acf(acf_filename)['AppState']
-
-	app_id = app_state['appID']
-	name = app_state['UserConfig']['name']
-	ui._print('%s (%s):' % (name, app_id))
-
+def find_game_path(app_state, library_root, acf_filename, opts):
 	# XXX TODO: acf games can be installed in other libraries, I need to
 	# try it to find if that would change this logic.
 	#
@@ -112,19 +154,28 @@ def check_acf(acf_filename, opts):
 		ui._cprint('yellow', g_indent + 'WARNING: Blank installdir in %s, trying UserConfig.appinstalldir...' % acf_filename)
 		# FIXME: This may be in the Windows format which will probably break this!
 		install_dir = os.path.basename(app_state['UserConfig']['appinstalldir'])
-	(found, game_path, pretty) = insensitive_path(os.path.join(os.path.curdir, 'common/%s' %
+
+	(found, game_path, pretty) = insensitive_path(os.path.join(library_root, 'SteamApps/common/%s' %
 		install_dir), opts)
-	if not found:
+	if found:
+		# TODO: Warn if a second directory exists with the same name
+		# but differing case, since that may confuse Steam or the game
+		pass
+	else:
 		ui._print(g_indent, end='')
 		ui._cprint(colours[False], 'Missing game directory', end=': ')
 		ui._print(pretty)
-		return
+		return None
 	if pretty is not None:
 		ui._print(g_indent, end='')
-		ui._cprint('back_yellow black', 'WARNING: Case Mismatch', end=': ')
+		ui._cprint('back_yellow black', 'WARNING: Case Mismatch', end='')
+		if not opts.rename:
+			ui._print(' (rerun with -r to fix)', end='')
+		ui._print(': ', end='')
 		ui._print(pretty)
+	return game_path
 
-	managed_depots = app_state['ManagedDepots'].split(',')
+def get_mounted_depots(app_state):
 	try:
 		mounted_depots = app_state['MountedDepots']
 	except KeyError:
@@ -132,37 +183,64 @@ def check_acf(acf_filename, opts):
 		#       'MountedDepots'. Not sure why the difference.
 		# XXX: Double check 'ActiveDepots' is the right key on
 		#      my Windows box
-		mounted_depots = app_state['ActiveDepots']
-	else:
-		assert('ActiveDepots' not in app_state)
+		return app_state['ActiveDepots']
+	assert('ActiveDepots' not in app_state)
+	return mounted_depots
+
+def check_acf(acf_filename, opts):
+	app_state = acf.parse_acf(acf_filename)['AppState']
+
+	app_id = app_state['appID']
+	name = app_state['UserConfig']['name']
+	ui._print('%s (%s):' % (name, app_id))
+
+	library_root = os.path.relpath(os.path.realpath(os.path.join(
+		os.path.curdir, os.path.dirname(acf_filename), '..')))
+
+	game_path = find_game_path(app_state, library_root, acf_filename, opts)
+	if game_path is None: return
+
+	managed_depots = app_state['ManagedDepots'].split(',')
+	mounted_depots = get_mounted_depots(app_state)
 
 	ok = depot_summary_ok(mounted_depots)
 	colour = colours[ok]
 	if opts.verbose or not ok:
 		ui._print(g_indent, end='')
 		ui._cprint(colour, str_depot_summary(mounted_depots, managed_depots))
-
-	if not ok: return
-	(ok, decoders) = check_depots(mounted_depots, managed_depots, game_path, g_indent*2, opts)
 	if not ok: return
 
-	# TODO: Search game directory for files NOT listed in any manifest files
-	# Should only be done at request since lots of games seem to create log files, etc.
-	# TODO: Also detect if two versions of a file exist with differing case
-	# TODO: Also add option to purge unlisted files
+	ok = check_depots_exist(mounted_depots, managed_depots, library_root, g_indent*2, opts)
+	if not ok: return
+
+	(ok, filenames) = check_all_depot_files_exist(mounted_depots, library_root, game_path, g_indent*2, opts)
+	if opts.extra or opts.delete:
+		if opts.verbose: # So they don't appear to be under a manifest heading
+			ui._print(g_indent*2 + 'Untracked files:')
+		find_extra_files(game_path, filenames, g_indent*3, opts)
+	if not ok: return
+
+	ui._cprint('green', 'OK')
 
 def main():
 	parser = optparse.OptionParser()
-	parser.add_option('-v', '--verbose', action='count', help='ui._print out info about things that pasesd. Use multiple times for more info.')
+	parser.add_option('-v', '--verbose', action='count',
+			help='Print out info about things that pasesd. Use multiple times for more info.')
+	parser.add_option('-r', '--rename', action='store_true',
+			help='Rename files & directories to correct case mismatches')
+	parser.add_option('-e', '--extra', '--extraneous', action='store_true',
+			help='List any files in the game directory that are not tracked by any manifest files. Extraneous files are highlighted in ' + \
+				ui._ctext('back_blue yellow', 'blue'))
+	# '-d': Interractively delete (implies -e) files that not listed in the manifest file
+	parser.add_option('-D', '--delete', action='store_true',
+			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. Also beware that a few games (e.g. Borderlands) still have their DLC managed by the legacy NCF format, which this script is not aware of and could therefore delete required files. BE CAREFUL WITH THIS OPTION!')
 	# TODO:
-	# '-r': Automatically rename files with mismatched case and tag the game for needing verification on next launch
-	# '-R': Automatically rename files with mismatched case, but do not tag them for verification
-	# '-v': Mark game as needs verification on next launch (XXX: What option is that in the .acf? XXX: happens if Steam is running at the time?)
-	# '-f': Find any files in the game directories that are not listed in the manifest files
-	# '-d': Delete (implies -f) only files that are duplicates by case (XXX: Include game directory) and tag for verification
-	# '-D': Delete (implies -f) any files not listed in the manifest file (CAUTION: Some games still have their DLC in the old NCF format, which could cause some required content to be deleted!) And tag for verification
+	# '--verify': Mark game as needs verification on next launch (XXX: What option is that in the .acf? XXX: happens if Steam is running at the time?)
+	#             Also, when I can do this it might be an idea for some of the above rename/delete options to imply this.
 	(opts, args) = parser.parse_args()
-	# TODO: If directory specified, interactively ask which game to check by name
+	# TODO: If directory specified, interactively ask which game to check by name (maybe change default to do this to)
+	if len(args) == 0:
+		args = glob.glob(os.path.expanduser('~/.steam/root/SteamApps/appmanifest_*.acf'))
 	for filename in args:
 		check_acf(filename, opts)
 		ui._print()

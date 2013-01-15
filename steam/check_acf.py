@@ -19,7 +19,10 @@ def depot_summary_ok(mounted):
 	return False
 
 def str_depot_summary(mounted, managed):
-	return '%i/%i depotcaches mounted - Not released on this platform yet?' % (len(mounted), len(managed))
+	ret = '%i/%i depotcaches mounted' % (len(mounted), len(managed))
+	if len(mounted) == 0:
+		ret += ' - Not released on this platform yet?'
+	return ret
 
 def manifest_filename(depot, timestamp):
 	return '%s_%s.manifest' % (depot, timestamp)
@@ -208,7 +211,13 @@ def check_acf(acf_filename, opts):
 	if opts.verbose or not ok:
 		ui._print(g_indent, end='')
 		ui._cprint(colour, str_depot_summary(mounted_depots, managed_depots))
-	if not ok: return
+	if not ok:
+		if opts.uninstall:
+			ui._print(g_indent, end='')
+			path = os.path.join(os.path.curdir, acf_filename)
+			os.rename(path, path + '~')
+			ui._cprint('back_yellow black', 'UNINSTALLED!')
+		return
 
 	ok = check_depots_exist(mounted_depots, managed_depots, library_root, g_indent*2, opts)
 	if not ok: return
@@ -234,6 +243,8 @@ def main():
 	# '-d': Interractively delete (implies -e) files that not listed in the manifest file
 	parser.add_option('-D', '--delete', action='store_true',
 			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. Also beware that a few games (e.g. Borderlands) still have their DLC managed by the legacy NCF format, which this script is not aware of and could therefore delete required files. BE CAREFUL WITH THIS OPTION!')
+	parser.add_option('-U', '--uninstall', action='store_true',
+			help="Mark games with bad acf files (Currently that means 0 depotcaches mounted, but that definition may change in the future) as uninstalled. This WILL NOT DELETE THE GAME - it is intended to quickly remove bad acf files that may be interfering with launching or updating particular games. These games will need to be manually re-installed in Steam. (NOTE: Restart Steam afterwards)")
 	# TODO:
 	# '--verify': Mark game as needs verification on next launch (XXX: What option is that in the .acf? XXX: happens if Steam is running at the time?)
 	#             Also, when I can do this it might be an idea for some of the above rename/delete options to imply this.

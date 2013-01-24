@@ -13,13 +13,19 @@ colours = {
 	True: ''
 }
 
+class UnknownLen(list): pass
+
 def depot_summary_ok(mounted):
 	if len(mounted) > 0:
 		return True
 	return False
 
 def str_depot_summary(mounted, managed):
-	ret = '%i/%i depotcaches mounted' % (len(mounted), len(managed))
+	if isinstance(managed, UnknownLen):
+		l = ui._ctext('back_yellow black', '?')
+	else:
+		l = str(len(managed))
+	ret = '%i/%s depotcaches mounted' % (len(mounted), l)
 	if len(mounted) == 0:
 		ret += ' - Not released on this platform yet?'
 	return ret
@@ -203,8 +209,12 @@ def check_acf(acf_filename, opts):
 	game_path = find_game_path(app_state, library_root, acf_filename, opts)
 	if game_path is None: return
 
-	managed_depots = app_state['ManagedDepots'].split(',')
 	mounted_depots = get_mounted_depots(app_state)
+	try:
+		managed_depots = app_state['ManagedDepots'].split(',')
+	except KeyError:
+		#ui._cprint('back_yellow black', 'WARNING: No ManagedDepots, using MountedDepots instead!')
+		managed_depots = UnknownLen(mounted_depots.keys())
 
 	ok = depot_summary_ok(mounted_depots)
 	colour = colours[ok]

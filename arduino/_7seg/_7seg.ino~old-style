@@ -1,0 +1,216 @@
+/* Mapping between arduino digital pins and display pins: */
+#define DISP_PIN_1      7
+#define DISP_PIN_2      6
+#define DISP_PIN_3      5
+#define DISP_PIN_4      4
+#define DISP_PIN_5      3
+#define DISP_PIN_6_NEG  8 /* GROUND: Connect 1K resistor in series */
+#define DISP_PIN_7      0
+#define DISP_PIN_8_NEG  9 /* GROUND: Connect 1K resistor in series */
+#define DISP_PIN_9_NEG  10 /* GROUND: Connect 1K resistor in series */
+#define DISP_PIN_10     1
+#define DISP_PIN_11     2
+#define DISP_PIN_12_NEG 12 /* GROUND: Connect 1K resistor in series */
+
+/*
+Definition of segment/digit pins on LED display:
+ _A_
+|   |
+F   B
+|_G_|
+|   |
+E   C
+|_D_| .DP
+
+NOTE: Segments are assumed positive, and digits are assumed negative in this sketch, some displays are the other way around
+*/
+#define SEG_A  DISP_PIN_11
+#define SEG_B  DISP_PIN_7
+#define SEG_C  DISP_PIN_4
+#define SEG_D  DISP_PIN_2
+#define SEG_E  DISP_PIN_1
+#define SEG_F  DISP_PIN_10
+#define SEG_G  DISP_PIN_5
+#define SEG_DP DISP_PIN_3
+
+#define DIG_1  DISP_PIN_12_NEG
+#define DIG_2  DISP_PIN_9_NEG
+#define DIG_3  DISP_PIN_8_NEG
+#define DIG_4  DISP_PIN_6_NEG
+
+const int POSITIONS[] = {
+  DIG_1,
+  DIG_2,
+  DIG_3,
+  DIG_4,
+};
+
+const int SEGS_ZERO[]  = {SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F};
+const int SEGS_ONE[]   = {SEG_B, SEG_C};
+const int SEGS_TWO[]   = {SEG_A, SEG_B, SEG_G, SEG_E, SEG_D};
+const int SEGS_THREE[] = {SEG_A, SEG_B, SEG_G, SEG_C, SEG_D};
+const int SEGS_FOUR[]  = {SEG_F, SEG_G, SEG_B, SEG_C};
+const int SEGS_FIVE[]  = {SEG_A, SEG_F, SEG_G, SEG_C, SEG_D};
+const int SEGS_SIX[]   = {SEG_F, SEG_E, SEG_D, SEG_C, SEG_G};
+const int SEGS_SEVEN[] = {SEG_A, SEG_B, SEG_C};
+const int SEGS_EIGHT[] = {SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F, SEG_G};
+const int SEGS_NINE[]  = {SEG_C, SEG_B, SEG_A, SEG_F, SEG_G};
+
+const int SEGS_ALL[]   = {SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F, SEG_G, SEG_DP};
+
+const int SEGS_BLANK[] = {};
+const int SEGS_NEG[]   = {SEG_G};
+
+const int SEGS_E[] = {SEG_A, SEG_F, SEG_G, SEG_E, SEG_D};
+
+const int SEGS_F[] = {SEG_A, SEG_F, SEG_G, SEG_E};
+const int SEGS_A[] = {SEG_A, SEG_B, SEG_C, SEG_E, SEG_F, SEG_G};
+const int SEGS_I[] = {SEG_F, SEG_E};
+const int SEGS_L[] = {SEG_F, SEG_E, SEG_D};
+
+const int* NUMBER_SEGS[] = {
+  SEGS_ZERO,
+  SEGS_ONE,
+  SEGS_TWO,
+  SEGS_THREE,
+  SEGS_FOUR,
+  SEGS_FIVE,
+  SEGS_SIX,
+  SEGS_SEVEN,
+  SEGS_EIGHT,
+  SEGS_NINE,
+  SEGS_ALL, /* 10: Special - includes DP */
+  SEGS_BLANK, /* 11: Special - blank */
+  SEGS_NEG, /* 12: Special - negative sign */
+  SEGS_E, /* 13: Special - E */
+  SEGS_F, /* 14: Special - F */
+  SEGS_A, /* 15: Special - A */
+  SEGS_I, /* 16: Special - I */
+  SEGS_L, /* 17: Special - L */
+};
+
+const int SEGS_LEN[] = {
+  sizeof(SEGS_ZERO) / sizeof(int),
+  sizeof(SEGS_ONE) / sizeof(int),
+  sizeof(SEGS_TWO) / sizeof(int),
+  sizeof(SEGS_THREE) / sizeof(int),
+  sizeof(SEGS_FOUR) / sizeof(int),
+  sizeof(SEGS_FIVE) / sizeof(int),
+  sizeof(SEGS_SIX) / sizeof(int),
+  sizeof(SEGS_SEVEN) / sizeof(int),
+  sizeof(SEGS_EIGHT) / sizeof(int),
+  sizeof(SEGS_NINE) / sizeof(int),
+  sizeof(SEGS_ALL) / sizeof(int),
+  sizeof(SEGS_BLANK) / sizeof(int),
+  sizeof(SEGS_NEG) / sizeof(int),
+  sizeof(SEGS_E) / sizeof(int),
+  sizeof(SEGS_F) / sizeof(int),
+  sizeof(SEGS_A) / sizeof(int),
+  sizeof(SEGS_I) / sizeof(int),
+  sizeof(SEGS_L) / sizeof(int),
+};
+
+void pos_state(int pos, int state)
+{
+  pinMode(POSITIONS[pos], OUTPUT);
+  digitalWrite(POSITIONS[pos], !state);
+}
+
+void digit(int digit, int pos, int state)
+{
+  int i;
+  
+  if (digit < 0 || digit > sizeof(NUMBER_SEGS)) {
+    pos_state(pos, 0);
+    return;
+  }
+  
+  if (pos >= 0)
+    pos_state(pos, state);
+  
+  for (i = 0; i < SEGS_LEN[digit]; i++) {
+    pinMode(NUMBER_SEGS[digit][i], OUTPUT);
+    digitalWrite(NUMBER_SEGS[digit][i], state);
+  }
+}
+
+void setup()
+{
+  int i;
+  
+  for (i = 0; i < 4; i++)
+    pos_state(i, 0);
+  
+  digit(10, -1, LOW); /* All segments */
+}
+
+void num2array(long num, int *array)
+{
+  int i, neg = 0, sig = 0;
+  
+  if (num > 9999 || num < -999) {
+#if 0
+    array[0] = 12;
+    if (num > 0)
+      array[1] = 11;
+    else
+      array[1] = 12;
+    array[2] = 13;
+    array[3] = 12;
+#else
+    for (i = 0; i < 4; i++) {
+      array[i] = i+14;
+    }
+#endif
+    return;
+  }
+  
+  if (num < 0) {
+    neg = 1;
+    num = num * -1;
+  }
+  array[0] = (num / 1000) % 10;
+  array[1] = (num /  100) % 10;
+  array[2] = (num /   10) % 10;
+  array[3] = (num /    1) % 10;
+
+  for (i = 0; i < 4; i++) {
+    if (!sig && array[i])
+      sig = i+1;
+    if (!sig && i < 3 && !array[i])
+      array[i] = 11;
+  }
+  
+  if (neg && sig > 1)
+    array[sig-2] = 12;
+}
+
+#if 0
+void loop()
+{
+  static int i = 0, pos = 0;
+  digit(i, pos, HIGH);
+  delay(100);
+  digit(i, pos, LOW);
+  i = (i+1) % 10;
+  pos = (pos+1) % 4;
+}
+#else
+void loop()
+{
+//  static int num = 0;
+  int num_array[4];
+  int i;
+  
+  //num2array(5 - (millis() / 1000), num_array);
+  num2array(2500 - (millis() / 10), num_array);
+  
+  for (i = 0; i < 4; i++) {
+    digit(num_array[i], i, HIGH);
+    delay(1);
+    digit(num_array[i], i, LOW);
+  }
+  
+//  num = (num+1) % 1000000;
+}
+#endif

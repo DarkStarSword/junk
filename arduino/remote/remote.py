@@ -5,7 +5,9 @@ import serial
 
 prefix = '00100'
 remote_id = '00000000' # Pressing the new code button increments this 8-bit value by one
-arduino = '/dev/ttyACM0'
+arduino = '/dev/ttyACM0' # FIXME: Add udev rule to make this constant, or parse sysfs from here, as in:
+# /sys/bus/usb/devices/XXX/product = 'Arduino Leonardo'
+# /sys/bus/usb/devices/XXX/XXX:1.0/tty/ttyACM0
 baud = 115200
 
 def code(remote_id, device, action):

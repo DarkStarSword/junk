@@ -1,3 +1,3 @@
 ARDUINO_LIBS = VirtualWire
 
-include ${HOME}/arduino/leo.mk
+include ${PWD}/../leo.mk

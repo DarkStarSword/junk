@@ -99,6 +99,62 @@ static void transmit_433(unsigned int len, char *code,
 	interrupts();
 }
 
+/* FIXME: MERGE WITH ABOVE */
+static void transmit_433_heller(unsigned int len, char *code,
+			 unsigned int transmissions) /* 4 */
+{
+	int i, j;
+
+	noInterrupts();
+	digitalWrite(TX_PIN, HIGH);
+	delayMicroseconds(433);
+	digitalWrite(TX_PIN, LOW);
+
+#if 0
+	/* XXX: Measure actual delay is correct here */
+	/* delayMicroseconds is documented to be inaccurate above ~1.5ms */
+	delay(4);
+	delayMicroseconds(470);
+#else
+	for (j = 0; j < 8; j++) {
+		delay(1);
+	}
+#endif
+
+	for (i=0; i < transmissions; i++) {
+		for (j=0; j < len; j++) {
+			digitalWrite(TX_PIN, HIGH);
+			if (code[j] == '1') {
+				/* 1: long pulse followed by short delay */
+				delayMicroseconds(900);
+				digitalWrite(TX_PIN, LOW);
+				delayMicroseconds(433);
+			} else if (code[j] == '0') {
+				/* 0: short pulse followed by long delay */
+				delayMicroseconds(450);
+				digitalWrite(TX_PIN, LOW);
+				delayMicroseconds(883);
+			} else {
+				Serial.print("WARNING: code[");
+				Serial.print(j);
+				Serial.print("] not ASCII 0|1: ");
+				Serial.println(code[j]);
+			}
+		}
+#if 0
+		/* XXX: Measure actual delay is correct here */
+		/* delayMicroseconds is documented to be inaccurate above ~1.5ms */
+		delay(4);
+		delayMicroseconds(470);
+#else
+		for (j = 0; j < 8; j++) {
+			delay(1);
+		}
+#endif
+	}
+	interrupts();
+}
+
 #if 0
 long previousMillis = 0;
 long interval = 5000;
@@ -146,10 +202,6 @@ static void receive_433()
 }
 #endif
 
-#define BUF_LEN 32
-char buf[BUF_LEN];
-int buf_idx = 0;
-
 void reboot()
 {
 	/* It seems a bit silly that there is no API to do this - unless I'm
@@ -166,6 +218,10 @@ void reboot()
 	Serial.println(" is connected to RST");
 }
 
+#define BUF_LEN 64
+char buf[BUF_LEN];
+int buf_idx = 0;
+
 void loop()
 {
 	char c;
@@ -180,11 +236,17 @@ void loop()
 			Serial.println("");
 			if (!strncasecmp(buf, "reset", 6))
 				reboot();
-			if (!strncasecmp(buf, "tx ", 3)) {
+			else if (!strncasecmp(buf, "tx ", 3)) {
 				Serial.print("Transmitting ");
 				Serial.print(buf_idx-4);
 				Serial.println(" bits...");
 				transmit_433(buf_idx-4, &buf[3], 700, 1400, 4);
+				Serial.println("Done.");
+			} else if (!strncasecmp(buf, "test ", 5)) {
+				Serial.print("Transmitting Heller code ");
+				Serial.print(buf_idx-6);
+				Serial.println(" bits...");
+				transmit_433_heller(buf_idx-6, &buf[5], 4);
 				Serial.println("Done.");
 			}
 			buf_idx = 0;

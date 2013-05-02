@@ -58,9 +58,12 @@ for arg in "$@"; do
 	esac
 done
 
-if [ "$is_am" -eq "1" -a ! -f "$toplevel/.git/rebase-apply/applying" ]; then
-	echo "No git-am in progress, and no patch specified on the commandline"
-	exit 1
+if [ "$is_am" -eq "1" ]; then
+	if [ ! -f "$toplevel/.git/rebase-apply/applying" ]; then
+		echo "No git-am in progress, and no patch specified on the commandline"
+		exit 1
+	fi
+	patch="$toplevel/.git/rebase-apply/patch"
 fi
 
 if ! is_clean; then

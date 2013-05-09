@@ -1,24 +1,34 @@
 #!/bin/sh
 
-function is_clean()
+is_clean()
 {
-	test $(git ls-files -dmo "$toplevel"|wc -l) -eq 0
+	if [ "$ignore_untracked" = "1" ]; then
+		test $(git ls-files -dm "$toplevel"|wc -l) -eq 0
+	else
+		test $(git ls-files -dmo "$toplevel"|wc -l) -eq 0
+	fi
 }
 
-function get_reject_files()
+get_reject_files()
 {
 	git ls-files -o "$toplevel/*.rej"
 }
 
-function get_modified_files()
+get_modified_files()
 {
 	git ls-files -m "$toplevel"
 }
 
-function hunk_lineno()
+hunk_lineno()
 {
 	patch="$1"
 	awk '/^@@/ {print $2}' "$patch" | cut -d, -f 1 | cut -d- -f 2 | head -n 1
+}
+
+usage()
+{
+	echo "usage: $0 [ patch ]"
+	exit 1
 }
 
 toplevel=$(git rev-parse --show-toplevel)
@@ -27,19 +37,43 @@ if [ -z "$toplevel" ]; then
 	exit 1
 fi
 
-if [ ! -f "$toplevel/.git/rebase-apply/applying" ]; then
-	echo No git-am in progress
-	exit 1
+ignore_untracked=0
+is_am=1
+for arg in "$@"; do
+	case "$arg" in
+		'--ignore-untracked'|'-i')
+			ignore_untracked=1
+			;;
+		*)
+			if [ -n "$patch" ]; then
+				usage
+			fi
+			patch="$arg"
+			is_am=0
+			if [ ! -f "$patch" ]; then
+				echo "$patch not found"
+				usage
+			fi
+			;;
+	esac
+done
+
+if [ "$is_am" -eq "1" ]; then
+	if [ ! -f "$toplevel/.git/rebase-apply/applying" ]; then
+		echo "No git-am in progress, and no patch specified on the commandline"
+		exit 1
+	fi
+	patch="$toplevel/.git/rebase-apply/patch"
 fi
 
 if ! is_clean; then
-	echo "Working directory dirty"
+	echo "Working directory dirty, aborting"
 	exit 1
 fi
 
 cd "$toplevel"
 
-git apply --index --reject "$toplevel/.git/rebase-apply/patch"
+git apply --index --reject "$patch"
 
 # git apply --index doesn't seem to work with --reject when only some hunks
 # applied. I'm guessing (but haven't tested) that new/deleted files are OK:
@@ -62,6 +96,7 @@ for reject in $(get_reject_files); do
 	else
 		applied=FAIL
 		echo "WARNING: File unchanged, not cleaning up $reject"
+		# FIXME: Ask to continue, abort leaving .rej, abort cleaning up, etc.
 		echo "Press enter to continue"
 		read dummy
 	fi
@@ -69,7 +104,11 @@ done
 
 if [ "$applied" = "OK" ] && is_clean; then
 	echo
-	echo "All files resolved, you should continue by running 'git am --resolved'"
+	if [ "$is_am" -eq "1" ]; then
+		echo "All files resolved, you should continue by running 'git am --resolved'"
+	else
+		echo "All files resolved, you should now commit the result"
+	fi
 	# git am --resolved
 else
 	echo

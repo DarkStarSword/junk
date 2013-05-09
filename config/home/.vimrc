@@ -23,10 +23,11 @@ set shell=/bin/sh " fish doesn't work since vim encloses the command in brackets
 
 "map <F5> :set mouse=a<CR>
 "map <F6> :set mouse=<CR>
+map <F6> :set filetype=diff<CR>
 map <F7> :set invspell<CR>
 " F8 set below
+" F9 set below
 nnoremap <silent> <f4> :TlistToggle<CR>
-"map <F9> :set filetype=diff<CR>
 nnoremap <F11> :set number!<CR>
 
 let Tlist_Use_Right_Window=1

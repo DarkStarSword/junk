@@ -36,17 +36,17 @@
 # I'm undecided on this though - when I support count arguments there may be
 # some benefit from displaying the count here, but that would also make the
 # size of these strings vary, which I'd rather not do...
-set -l cn (set_color normal)
-set -g vi_mode_normal  (set_color blue)'n'$cn
-set -g vi_mode_replace (set_color red)'r'$cn
-set -g vi_mode_REPLACE (set_color --background=red)'R'$cn
-set -g vi_mode_insert  (set_color green)'i'$cn
-set -g vi_mode_delete  (set_color red)'d'$cn
-set -g vi_mode_change  (set_color yellow)'c'$cn
-set -g vi_mode_g       (set_color blue)'g'$cn
-set -g vi_mode_lower   (set_color blue)'u'$cn
-set -g vi_mode_upper   (set_color blue)'U'$cn
-set -g vi_mode_swapcase (set_color blue)'~'$cn
+set -l cn (set_color normal 2>/dev/null)
+set -g vi_mode_normal  (set_color blue 2>/dev/null)'n'$cn
+set -g vi_mode_replace (set_color red 2>/dev/null)'r'$cn
+set -g vi_mode_REPLACE (set_color --background=red 2>/dev/null)'R'$cn
+set -g vi_mode_insert  (set_color green 2>/dev/null)'i'$cn
+set -g vi_mode_delete  (set_color red 2>/dev/null)'d'$cn
+set -g vi_mode_change  (set_color yellow 2>/dev/null)'c'$cn
+set -g vi_mode_g       (set_color blue 2>/dev/null)'g'$cn
+set -g vi_mode_lower   (set_color blue 2>/dev/null)'u'$cn
+set -g vi_mode_upper   (set_color blue 2>/dev/null)'U'$cn
+set -g vi_mode_swapcase (set_color blue 2>/dev/null)'~'$cn
 
 set -g __vi_mode_undo_cmdline ''
 set -g __vi_mode_undo_cmdline_pos 0

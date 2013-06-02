@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+dir='/home/user/MyDocs/.v'
+filename="$dir/$(date +%Y-%m-%d_%H%M%S).mkv"
+mkdir -p "$dir"
+echo $filename
+
+gst-launch -v subdevsrc camera-device=primary capture-mode=viewfinder viewfinder-mode=video ! video/x-raw-yuv, width=1280, height=720, framerate=2999/100 ! dsphdmp4venc bitrate=8180288 ! tee name=v ! queue ! rtpmp4vpay ! udpsink host=192.168.2.14 v. ! queue ! matroskamux ! filesink location="$filename"

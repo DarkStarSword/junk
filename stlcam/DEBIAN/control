@@ -1,0 +1,10 @@
+Package: stlcam
+Version: 0.1
+Architecture: all
+Maintainer: <darkstarsword@gmail.com>
+Description: N9 Remote Camera
+ Simultaneously records video to the internal storage while streaming it over a
+ network to allow the use of a remote viewfinder. This is a very simple camera
+ application - there isn't even a user interface provided for the phone, it
+ simply runs in a terminal window.
+Aegis-Manifest: included

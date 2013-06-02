@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=StlCam
+Categories=System;
+Exec=invoker --type=e /usr/bin/meego-terminal -n -e develsh -c /usr/bin/stlcam
+Icon=icon-l-camera

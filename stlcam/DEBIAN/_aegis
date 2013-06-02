@@ -1,0 +1,8 @@
+<aegis>
+        <request policy="add">
+                <credential name="GRP::video" />
+                <credential name="GRP::pulse-access" />
+
+                <for path="/usr/bin/stlcam" />
+        </request>
+</aegis>

@@ -198,17 +198,23 @@ set $music2            i3-sensible-terminal -e mocp
 # TODO: If pulseaudio is in use, use pavucontrol instead (+ if installed)
 set $mixer             i3-sensible-terminal -e alsamixer
 
-# TODO: Immediate feedback of change
 # TODO: Allow multiple channels to be synchronised (e.g. when subwoofers, dock
 # or other unusual outputs do not slave off master or pcm in hardware)
-set $vol_down exec --no-startup-id amixer set Master 2-
-set $vol_up   exec --no-startup-id amixer set Master 2+
-set $vol_mute exec --no-startup-id amixer set Master toggle
+# NOTE: Requres i3status >= v2.7
+# TODO: There is still a slight delay from i3status - Maybe add some immediate
+# feedback like I do in my wmii plugins.
+# FIXME: This can make i3 somewhat unresponsive for a little while
+# (unattributed high CPU usage) if the volume buttons are held down (too many
+# execs I think). I should turn my wmii plugin into a daemon that grabs the
+# keys itself
+set $vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
+set $vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
+set $vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
 # TODO: Smart volume keys (refer to my wmii plugins) which intelligently
 # determine whether to send to an application, pulseaudio or alsa
-set $smart_vol_down exec --no-startup-id amixer set Master 2-
-set $smart_vol_up   exec --no-startup-id amixer set Master 2+
-set $smart_vol_mute exec --no-startup-id amixer set Master toggle
+set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
+set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
+set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
 
 # TODO: Smart music keys (refer to my wmii plugins) which send commands to
 # whichever music player is running and was last playing music

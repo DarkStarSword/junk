@@ -242,21 +242,21 @@ bindsym $mod+grave      exec $lock
 bindsym XF86AudioLowerVolume      $smart_vol_down
 bindsym $mod+XF86AudioLowerVolume $vol_down
 bindsym $mod+bracketleft          $smart_vol_down
-bindsym $mod+Shift+bracketleft    $vol_down
+bindsym $mod+Control+bracketleft  $vol_down
 
 bindsym XF86AudioRaiseVolume      $smart_vol_up
 bindsym $mod+XF86AudioRaiseVolume $vol_up
 bindsym $mod+bracketright         $smart_vol_up
-bindsym $mod+Shift+bracketright   $vol_up
+bindsym $mod+Control+bracketright $vol_up
 
 bindsym XF86AudioMute             $smart_vol_mute
 bindsym $mod+XF86AudioMute        $vol_mute
 bindsym $mod+backslash            $smart_vol_mute
-bindsym $mod+Shift+backslash      $vol_mute
+bindsym $mod+Control+backslash    $vol_mute
 
 bindsym $mod+XF86AudioPlay        exec $mixer
 bindsym $mod+XF86AudioPause       exec $mixer
-bindsym $mod+Control+backslash    exec $mixer
+bindsym $mod+Shift+backslash      exec $mixer
 
 # TODO: Allow the XF86Audio* grabs to be released to allow applications that
 # want to grab them directly can do so

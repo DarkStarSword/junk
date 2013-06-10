@@ -201,14 +201,14 @@ set $mixer             i3-sensible-terminal -e alsamixer
 # (unattributed high CPU usage) if the volume buttons are held down (too many
 # execs I think). I should turn my wmii plugin into a daemon that grabs the
 # keys itself
-set $vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 py3status
-set $vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 py3status
-set $vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 py3status
+set $vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 py3status
+set $vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 py3status
+set $vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 py3status
 # TODO: Smart volume keys (refer to my wmii plugins) which intelligently
 # determine whether to send to an application, pulseaudio or alsa
-set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 py3status
-set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 py3status
-set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 py3status
+set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 py3status
+set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 py3status
+set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 py3status
 
 # TODO: Smart music keys (refer to my wmii plugins) which send commands to
 # whichever music player is running and was last playing music
@@ -228,10 +228,10 @@ new_float         normal 1
 hide_edge_borders both
 
 # TODO: spawn xautolock
-bindsym XF86ScreenSaver exec $lock
-bindsym XF86Sleep       exec $lock
-bindsym XF86Suspend     exec $lock
-bindsym $mod+grave      exec $lock
+bindsym XF86ScreenSaver exec --no-startup-id $lock
+bindsym XF86Sleep       exec --no-startup-id $lock
+bindsym XF86Suspend     exec --no-startup-id $lock
+bindsym $mod+grave      exec --no-startup-id $lock
 
 bindsym XF86AudioLowerVolume      $smart_vol_down
 bindsym $mod+XF86AudioLowerVolume $vol_down

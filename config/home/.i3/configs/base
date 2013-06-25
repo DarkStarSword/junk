@@ -225,7 +225,7 @@ set $term_bw         -bg Black -fg White  # Overrides colour scheme in .Xresourc
 workspace_layout  stacked
 new_window        normal 1
 new_float         normal 1
-hide_edge_borders both
+# hide_edge_borders both
 
 # TODO: spawn xautolock
 bindsym XF86ScreenSaver exec $lock

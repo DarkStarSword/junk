@@ -1,2 +1,3 @@
 font -misc-fixed-medium-r-normal-*-8-*-*-*-*-*-iso10646-*
 set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
+hide_edge_borders both

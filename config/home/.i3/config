@@ -161,7 +161,7 @@ bindsym $mod+Shift+r mode "resize"
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
 bar {
-        status_command py3status -c ~/.i3/i3status-eee.conf
+        status_command i3status -c ~/.i3/i3status-eee.conf
 	# TODO: Music status, launching feedback, etc
 }
 
@@ -176,11 +176,11 @@ set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
 # set $mute_channel Master
 
 set $browser           --no-startup-id notify-send -t 500 'Launching Browser...'; exec sensible-browser
-set $email             i3-sensible-terminal -e sup
+set $email             i3-sensible-terminal -bg Black -fg White -e sup-mail
 set $rss               i3-sensible-terminal -e canto
 set $network_manager   i3-sensible-terminal -e wicd-curses
 set $bluetooth_manager blueman-manager
-set $chat              i3-sensible-terminal -e finch
+set $chat              i3-sensible-terminal -bg Black -fg White -e finch
 set $irc               i3-sensible-terminal -e irssi
 set $python            i3-sensible-terminal -e ipython
 set $calc              i3-sensible-terminal -e calc
@@ -201,14 +201,14 @@ set $mixer             i3-sensible-terminal -e alsamixer
 # (unattributed high CPU usage) if the volume buttons are held down (too many
 # execs I think). I should turn my wmii plugin into a daemon that grabs the
 # keys itself
-set $vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 py3status
-set $vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 py3status
-set $vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 py3status
+set $vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
+set $vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
+set $vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
 # TODO: Smart volume keys (refer to my wmii plugins) which intelligently
 # determine whether to send to an application, pulseaudio or alsa
-set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 py3status
-set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 py3status
-set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 py3status
+set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
+set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
+set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
 
 # TODO: Smart music keys (refer to my wmii plugins) which send commands to
 # whichever music player is running and was last playing music

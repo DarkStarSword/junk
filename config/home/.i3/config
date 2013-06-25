@@ -12,7 +12,7 @@ set $right l
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below. ISO 10646 = Unicode
 # font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
-font -misc-fixed-medium-r-normal-*-8-*-*-*-*-*-iso10646-*
+font -misc-fixed-medium-r-normal--10-*-*-*-*-*-iso10646-*
 # The font above is very space-efficient, that is, it looks good, sharp and
 # clear in small sizes. However, if you need a lot of unicode glyphs or
 # right-to-left text rendering, you should instead use pango for rendering and
@@ -166,8 +166,8 @@ bar {
 }
 
 # Ian's extras
-set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
-# set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
+# set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
+set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
 
 # i3 BUG FIXME: Variables within variables appear to be expanded to an empty string
 # set $terminal i3-sensible-terminal -e
@@ -222,7 +222,7 @@ set $music_next  exec --no-startup-id cmus-remote --next
 set $term_large_font -fa Monospace -fs 24 # For viewing from across the room
 set $term_bw         -bg Black -fg White  # Overrides colour scheme in .Xresources
 
-workspace_layout  tabbed
+workspace_layout  stacked
 new_window        normal 1
 new_float         normal 1
 hide_edge_borders both

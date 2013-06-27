@@ -1,0 +1,1 @@
+bindsym $mod+F5 exec --no-startup-id ~/.i3/local/thinkpad/change_display.sh

@@ -204,19 +204,18 @@ set $mixer             i3-sensible-terminal -e alsamixer
 set $vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
 set $vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
 set $vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
-# TODO: Smart volume keys (refer to my wmii plugins) which intelligently
-# determine whether to send to an application, pulseaudio or alsa
-set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec killall -SIGUSR1 i3status
-set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec killall -SIGUSR1 i3status
-set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec killall -SIGUSR1 i3status
 
-# TODO: Smart music keys (refer to my wmii plugins) which send commands to
-# whichever music player is running and was last playing music
-set $music_prev  exec --no-startup-id cmus-remote --prev
-set $music_play  exec --no-startup-id cmus-remote --play
-set $music_pause exec --no-startup-id cmus-remote --pause
-set $music_stop  exec --no-startup-id cmus-remote --stop
-set $music_next  exec --no-startup-id cmus-remote --next
+# TODO: Daemonise this for increased responsiveness & cmus mute needs to
+# remember volume to unmute at
+set $smart_vol_down exec --no-startup-id ~/.i3/i3companion/commands.py vol down
+set $smart_vol_up   exec --no-startup-id ~/.i3/i3companion/commands.py vol up
+set $smart_vol_mute exec --no-startup-id ~/.i3/i3companion/commands.py vol mute
+
+set $music_prev  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Previous Track'
+set $music_play  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play'
+set $music_pause exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play/Pause'
+set $music_stop  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Stop'
+set $music_next  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Next Track'
 
 # Alternate modes for opening terminals
 set $term_large_font -fa Monospace -fs 24 # For viewing from across the room

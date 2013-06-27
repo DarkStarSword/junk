@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
 import pluginmanager
-from pluginmanager import notify, notify_exception, async, imported_from_wmiirc
-
-from pygmi import defmonitor, wmii
+from pluginmanager import notify, notify_exception, async
 
 autoloadMusicBackends = ['moc', 'cmus', 'spotify']
 registeredMusicBackends = {}
@@ -92,7 +90,6 @@ def command(command):
 
 	init_status(player)
 
-@defmonitor
 @notify_exception
 def music_status(self):
 	if not hasattr(self, 'status') or not hasattr(self, 'status_failures'):
@@ -108,7 +105,7 @@ def music_status(self):
 		return None
 	self.status_failures = 0
 	if status:
-		return wmii['normcolors'], status
+		return status
 	return None
 music_status.active = False
 music_status.status_failures = 0
@@ -138,10 +135,8 @@ def init_status(player = None):
 
 def init():
 	for plugin in autoloadMusicBackends:
-		try: pluginmanager._load_plugin(plugin)
-		except: pass
+		__import__(plugin)
 
-if imported_from_wmiirc():
-	init()
-	try: init_status()
-	except: pass
+init()
+# try: init_status()
+# except: pass

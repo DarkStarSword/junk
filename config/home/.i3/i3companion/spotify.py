@@ -5,7 +5,7 @@ import sys
 module = sys.modules[__name__]
 name = 'spotify'
 
-from pluginmanager import notify_exception, imported_from_wmiirc
+from pluginmanager import notify_exception
 import music
 import wmiidbus
 import dbus
@@ -154,5 +154,5 @@ if __name__ == '__main__':
 	print # pygmi usually runs into a threading issue while shutting down
 	wmiidbus.unload()
 	sys.exit(0)
-elif imported_from_wmiirc():
+else:
 	music.register_music_backend(name, module)

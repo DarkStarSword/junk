@@ -158,13 +158,6 @@ mode "resize" {
 
 bindsym $mod+Shift+r mode "resize"
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-bar {
-        status_command i3status -c ~/.i3/i3status-eee.conf
-	# TODO: Music status, launching feedback, etc
-}
-
 # Ian's extras
 # set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
 set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png

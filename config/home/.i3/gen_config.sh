@@ -4,7 +4,8 @@ config_dir="$HOME/.i3/configs"
 config="$HOME/.i3/config"
 i3_regen_config="$(readlink -f $0) $@"
 
-cat << EOF > "$config"
+gen_config() {
+	cat << EOF > "$config"
 # THIS FILE WAS GENERATED AUTOMATICALLY WITH THIS COMMAND:
 # $i3_regen_config
 
@@ -16,9 +17,16 @@ cat << EOF > "$config"
 set \$i3_regen_config $i3_regen_config
 EOF
 
-for fragment in base "$@"; do
-	echo -e "\n# ===== i3 CONFIG FRAGMENT -- $config_dir/$fragment =====\n" >> "$config"
-	cat "$config_dir/$fragment" >> "$config"
-done
+	for fragment in "$@"; do
+		echo -e "\n# ===== i3 CONFIG FRAGMENT -- $config_dir/$fragment =====\n" >> "$config"
+		cat "$config_dir/$fragment" >> "$config"
+	done
+}
+
+if [ $# -eq 0 ]; then
+	gen_config base generic
+else
+	gen_config base "$@"
+fi
 
 exit 0

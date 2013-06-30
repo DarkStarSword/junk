@@ -158,6 +158,14 @@ mode "resize" {
 
 bindsym $mod+Shift+r mode "resize"
 
+mode "i3 keys released! $mod+Control+t to re-grab" {
+	# This mode temporarily releases the i3 keybindings.
+	# Useful for VNC connections to another box also running i3.
+
+	bindsym $mod+Control+t mode "default"
+}
+bindsym $mod+Control+t mode "i3 keys released! $mod+Control+t to re-grab"
+
 # Ian's extras
 # set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
 set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png

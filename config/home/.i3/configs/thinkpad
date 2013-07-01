@@ -5,4 +5,5 @@ bindsym $mod+F5 exec --no-startup-id ~/.i3/local/thinkpad/change_display.sh
 bar {
         status_command i3status -c ~/.i3/configs/i3status-thinkpad.conf
 	# TODO: Music status, launching feedback, etc
+	tray_output primary
 }

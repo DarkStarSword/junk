@@ -299,6 +299,10 @@ bindsym $mod+slash     exec $calc
 bindsym $mod+Control+6 workspace back_and_forth
 bindsym $mod+Control+Shift+6 move container to workspace back_and_forth
 
+# Toggle workspace between outputs (XXX: What if the outputs are laid out
+# vertically? I'm not convinced this is the best keybinding for this)
+bindsym $mod+Shift+Tab move workspace to output right
+
 # -key, -mod and -history_key seem to be ignored from the command line. They
 # are set in ~/.config/dunstrc (besides which, exclusively doing it here is
 # racey since dunst can be automatically started by dbus)

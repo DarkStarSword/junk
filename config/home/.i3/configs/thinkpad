@@ -7,3 +7,5 @@ bar {
 	# TODO: Music status, launching feedback, etc
 	tray_output primary
 }
+
+workspace 6 output DP-2

@@ -9,3 +9,14 @@ bar {
 }
 
 workspace 6 output DP-2
+
+# When using a projector, avoid accidentally changing the external display
+workspace 1 output LVDS-0
+workspace 2 output LVDS-0
+workspace 3 output LVDS-0
+workspace 4 output LVDS-0
+workspace 5 output LVDS-0
+workspace 7 output LVDS-0
+workspace 8 output LVDS-0
+workspace 9 output LVDS-0
+workspace 10 output LVDS-0

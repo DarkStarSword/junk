@@ -21,6 +21,9 @@ set tags=./tags,tags;
 "set formatprg=par
 set shell=/bin/sh " fish doesn't work since vim encloses the command in brackets
 
+" Disable the unnecessary and annoying bells (esp. with urgent on bell)
+set noerrorbells visualbell t_vb=
+
 "map <F5> :set mouse=a<CR>
 "map <F6> :set mouse=<CR>
 map <F6> :set filetype=diff<CR>

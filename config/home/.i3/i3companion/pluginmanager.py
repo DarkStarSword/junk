@@ -2,8 +2,23 @@
 
 import functools
 
-def notify(msg, key=None, **kwargs):
+def notify_stdout(msg, key=None, **kwargs):
 	print msg
+
+libnotify_ids = {}
+def notify_libnotify(msg, key=None, timeout=1, **kwargs):
+	import dbus, wmiidbus
+
+	session_bus = wmiidbus.get_session_bus(start_thread=False)
+	proxy = session_bus.get_object('org.freedesktop.Notifications', '/org/freedesktop/Notifications')
+	notifications = dbus.Interface(proxy, 'org.freedesktop.Notifications')
+
+	id = libnotify_ids.get(key, 0)
+	id = notifications.Notify('purple-DBus-Example-2-libnotify', id, '', '', msg, [], {}, timeout)
+	if key is not None:
+		libnotify_ids[key] = id
+
+notify = notify_libnotify
 
 def notify_exception(arg):
 	"""

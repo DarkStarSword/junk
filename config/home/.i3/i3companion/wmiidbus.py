@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from pluginmanager import notify, notify_exception
-
 import dbus
 import dbus.service
 import threading
@@ -12,7 +10,7 @@ _bus_loop = None
 _thread = None
 
 _session_bus_lock = threading.Lock()
-def get_session_bus():
+def get_session_bus(start_thread=True):
 	global _session_bus
 
 	# TODO: Check if still connected
@@ -22,7 +20,8 @@ def get_session_bus():
 		if _session_bus is None:
 			(main_loop, bus_loop) = get_main_loop()
 			_session_bus = dbus.SessionBus(mainloop = bus_loop)
-		start_main_loop()
+		if start_thread:
+			start_main_loop()
 		return _session_bus
 
 _main_loop_lock = threading.Lock()

@@ -309,6 +309,12 @@ bindsym $mod+Shift+Tab move workspace to output right
 # exec --no-startup-id dunst -fn "$font" -geometry +0-0 -mod $mod -key period -history_key comma
 exec --no-startup-id dunst
 
+# This redirects ReceivedChatMsg and RecievedImMsg from libpurple clients
+# running the "DBus Example" plugin to libnotify. This is particularly useful
+# for Finch since pidgin-libnotify is incompatible with it and
+# purple-libnotify+ did not seem particularly stable (crashes Finch) for me.
+exec --no-startup-id ~/.i3/i3companion/purple.py
+
 # Misc TODO:
 # - actions
 #   - find_window

@@ -12,7 +12,7 @@ set $right l
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below. ISO 10646 = Unicode
 # font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
-font -misc-fixed-medium-r-normal-*-8-*-*-*-*-*-iso10646-*
+font -misc-fixed-medium-r-normal--10-*-*-*-*-*-iso10646-*
 # The font above is very space-efficient, that is, it looks good, sharp and
 # clear in small sizes. However, if you need a lot of unicode glyphs or
 # right-to-left text rendering, you should instead use pango for rendering and
@@ -126,9 +126,9 @@ bindsym $mod+Shift+9 move container to workspace 9
 bindsym $mod+Shift+0 move container to workspace 10
 
 # reload the configuration file
-bindsym $mod+Control+C reload
+bindsym $mod+Control+C exec --no-startup-id sh -c '$i3_regen_config && i3-msg reload'
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-bindsym $mod+Control+R restart
+bindsym $mod+Control+R exec --no-startup-id sh -c '$i3_regen_config && i3-msg restart'
 # exit i3 (logs you out of your X session)
 bindsym $mod+Control+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
 
@@ -158,16 +158,17 @@ mode "resize" {
 
 bindsym $mod+Shift+r mode "resize"
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-bar {
-        status_command py3status -c ~/.i3/i3status-eee.conf
-	# TODO: Music status, launching feedback, etc
+mode "i3 keys released! $mod+Control+t to re-grab" {
+	# This mode temporarily releases the i3 keybindings.
+	# Useful for VNC connections to another box also running i3.
+
+	bindsym $mod+Control+t mode "default"
 }
+bindsym $mod+Control+t mode "i3 keys released! $mod+Control+t to re-grab"
 
 # Ian's extras
-set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
-# set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
+# set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
+set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
 
 # i3 BUG FIXME: Variables within variables appear to be expanded to an empty string
 # set $terminal i3-sensible-terminal -e
@@ -176,13 +177,13 @@ set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
 # set $mute_channel Master
 
 set $browser           --no-startup-id notify-send -t 500 'Launching Browser...'; exec sensible-browser
-set $email             i3-sensible-terminal -e sup
+set $email             i3-sensible-terminal -bg Black -fg White -e sup-mail
 set $rss               i3-sensible-terminal -e canto
 set $network_manager   i3-sensible-terminal -e wicd-curses
 set $bluetooth_manager blueman-manager
-set $chat              i3-sensible-terminal -e finch
+set $chat              i3-sensible-terminal -bg Black -fg White -e finch
 set $irc               i3-sensible-terminal -e irssi
-set $python            i3-sensible-terminal -e ipython
+set $python            i3-sensible-terminal -bg Black -fg White -e ipython
 set $calc              i3-sensible-terminal -e calc
 set $calendar          i3-sensible-terminal -e wyrd
 set $voip              mumble
@@ -201,31 +202,30 @@ set $mixer             i3-sensible-terminal -e alsamixer
 # (unattributed high CPU usage) if the volume buttons are held down (too many
 # execs I think). I should turn my wmii plugin into a daemon that grabs the
 # keys itself
-set $vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 py3status
-set $vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 py3status
-set $vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 py3status
-# TODO: Smart volume keys (refer to my wmii plugins) which intelligently
-# determine whether to send to an application, pulseaudio or alsa
-set $smart_vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 py3status
-set $smart_vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 py3status
-set $smart_vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 py3status
+set $vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 i3status
+set $vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 i3status
+set $vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 i3status
 
-# TODO: Smart music keys (refer to my wmii plugins) which send commands to
-# whichever music player is running and was last playing music
-set $music_prev  exec --no-startup-id cmus-remote --prev
-set $music_play  exec --no-startup-id cmus-remote --play
-set $music_pause exec --no-startup-id cmus-remote --pause
-set $music_stop  exec --no-startup-id cmus-remote --stop
-set $music_next  exec --no-startup-id cmus-remote --next
+# TODO: Daemonise this for increased responsiveness & cmus mute needs to
+# remember volume to unmute at
+set $smart_vol_down exec --no-startup-id ~/.i3/i3companion/commands.py vol down
+set $smart_vol_up   exec --no-startup-id ~/.i3/i3companion/commands.py vol up
+set $smart_vol_mute exec --no-startup-id ~/.i3/i3companion/commands.py vol mute
+
+set $music_prev  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Previous Track'
+set $music_play  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play'
+set $music_pause exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play/Pause'
+set $music_stop  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Stop'
+set $music_next  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Next Track'
 
 # Alternate modes for opening terminals
 set $term_large_font -fa Monospace -fs 24 # For viewing from across the room
 set $term_bw         -bg Black -fg White  # Overrides colour scheme in .Xresources
 
-workspace_layout  tabbed
+workspace_layout  stacked
 new_window        normal 1
 new_float         normal 1
-hide_edge_borders both
+# hide_edge_borders both
 
 # TODO: spawn xautolock
 bindsym XF86ScreenSaver exec --no-startup-id $lock
@@ -262,10 +262,10 @@ bindsym XF86Calculator exec $calc
 bindsym XF86HomePage   exec $browser
 bindsym XF86Mail       exec $email
 bindsym XF86Eject      exec --no-startup-id eject
-# TODO: bindsym XF86TouchpadToggle       toggle_input_device('trackpad')
-# TODO: bindsym Shift-XF86TouchpadToggle toggle_input_device('trackpoint')
+bindsym XF86TouchpadToggle       exec --no-startup-id ~/.i3/i3companion/commands.py toggle input trackpad
+bindsym Shift+XF86TouchpadToggle exec --no-startup-id ~/.i3/i3companion/commands.py toggle input trackpoint
 bindsym XF86AudioPrev  $music_prev
-bindsym XF86AudioPlay  $music_play
+bindsym XF86AudioPlay  $music_pause
 bindsym XF86AudioPause $music_pause
 bindsym XF86AudioStop  $music_stop
 bindsym XF86AudioNext  $music_next
@@ -299,11 +299,21 @@ bindsym $mod+slash     exec $calc
 bindsym $mod+Control+6 workspace back_and_forth
 bindsym $mod+Control+Shift+6 move container to workspace back_and_forth
 
+# Toggle workspace between outputs (XXX: What if the outputs are laid out
+# vertically? I'm not convinced this is the best keybinding for this)
+bindsym $mod+Shift+Tab move workspace to output right
+
 # -key, -mod and -history_key seem to be ignored from the command line. They
 # are set in ~/.config/dunstrc (besides which, exclusively doing it here is
 # racey since dunst can be automatically started by dbus)
 # exec --no-startup-id dunst -fn "$font" -geometry +0-0 -mod $mod -key period -history_key comma
 exec --no-startup-id dunst
+
+# This redirects ReceivedChatMsg and RecievedImMsg from libpurple clients
+# running the "DBus Example" plugin to libnotify. This is particularly useful
+# for Finch since pidgin-libnotify is incompatible with it and
+# purple-libnotify+ did not seem particularly stable (crashes Finch) for me.
+exec --no-startup-id ~/.i3/i3companion/purple.py
 
 # Misc TODO:
 # - actions

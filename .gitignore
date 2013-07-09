@@ -2,3 +2,4 @@ sdtest
 dev_one
 *.so
 *.pyc
+.*.swp

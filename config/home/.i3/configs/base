@@ -299,7 +299,7 @@ bindsym $mod+m          exec --no-startup-id i3-input -F 'mark %s' -l 1 -P 'Mark
 bindsym $mod+apostrophe exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P 'Go to: '
 
 # Find a window by it's title
-bindsym $mod+q exec --no-startup-id i3-input -F '[title="%s"] focus' -P 'Find window: '
+bindsym $mod+q exec --no-startup-id i3-input -F '[title="(?i)%s"] focus' -P 'Find window: '
 
 # Last workspace (like vim's ctrl+6 edit alternate file)
 bindsym $mod+Control+6 workspace back_and_forth

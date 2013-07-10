@@ -330,16 +330,10 @@ bindsym $mod+F3 exec --no-startup-id xset dpms force suspend
 bindsym $mod+F4 exec --no-startup-id ~/.i3/i3companion/toggle_blanking.sh
 
 # Misc TODO:
-# - actions
-#   - find_window
-#   - recover window (unsure if I still need it)
 # - xautolock [ -toggle ]
 # - port wmii plugins, or turn into standalone scripts
-#   - music, cmus, moc, spotify
 #   - xdg autostart
 #   - xsetwacom
 #   - display & presentation
-#   - libpurple & irssi notifications (probably can just use an existing libnotify plugin)
-# - machine specific settings (source? precompile?)
+#   - daemonise the one's I've already ported
 # - caps, num & scroll lock indicators
-# - vim style mark and goto mod+m, mod+'

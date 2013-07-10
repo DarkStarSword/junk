@@ -190,8 +190,7 @@ set $voip              mumble
 # TODO: Statusbar
 set $music1            i3-sensible-terminal -e cmus
 set $music2            i3-sensible-terminal -e mocp
-# TODO: If pulseaudio is in use, use pavucontrol instead (+ if installed)
-set $mixer             i3-sensible-terminal -e alsamixer
+set $mixer             --no-startup-id "sh -c 'if which pavucontrol; then i3-msg exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
 
 # TODO: Allow multiple channels to be synchronised (e.g. when subwoofers, dock
 # or other unusual outputs do not slave off master or pcm in hardware)

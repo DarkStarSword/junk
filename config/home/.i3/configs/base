@@ -71,9 +71,9 @@ bindsym $mod+Control+Right  resize grow width 10 px or 10 ppt
 
 # split in horizontal orientation
 # I might want to change this binding to vim style marks...
-bindsym $mod+apostrophe split h
+bindsym $mod+semicolon split h
 # split in vertical orientation
-bindsym $mod+semicolon split v
+bindsym $mod+Shift+semicolon split v
 # These feel more natural since they match the directional keys, but I want to
 # use those key combinations for resizing:
 # bindsym $mod+Control+$left  split h

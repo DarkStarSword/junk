@@ -320,11 +320,13 @@ exec --no-startup-id ~/.i3/i3companion/purple.py
 # starting i3lock with --dpms
 bindsym $mod+F3 exec --no-startup-id xset dpms force suspend
 
+# Toggle screensaver + DPMS
+bindsym $mod+F4 exec --no-startup-id ~/.i3/i3companion/toggle_blanking.sh
+
 # Misc TODO:
 # - actions
 #   - find_window
 #   - recover window (unsure if I still need it)
-# - Toggle DPMS and screensaver
 # - xautolock [ -toggle ]
 # - port wmii plugins, or turn into standalone scripts
 #   - music, cmus, moc, spotify

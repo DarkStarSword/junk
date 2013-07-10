@@ -38,7 +38,7 @@ EOF
 }
 
 if [ $# -eq 0 ]; then
-	gen_config base generic marks
+	gen_config base generic
 else
 	gen_config base "$@"
 fi

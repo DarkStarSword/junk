@@ -294,6 +294,10 @@ bindsym $mod+n         exec $network_manager
 # bindsym $mod+period used by dunst!
 bindsym $mod+slash     exec $calc
 
+# Mark & Goto windows
+bindsym $mod+m          exec --no-startup-id i3-input -F 'mark %s' -l 1 -P 'Mark: '
+bindsym $mod+apostrophe exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P 'Go to: '
+
 # Last workspace (like vim's ctrl+6 edit alternate file)
 bindsym $mod+Control+6 workspace back_and_forth
 bindsym $mod+Control+Shift+6 move container to workspace back_and_forth

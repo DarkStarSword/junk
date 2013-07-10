@@ -4,5 +4,6 @@
     modifier = "mod4"
     key = period
     history_key = comma
+    follow = keyboard
 
     geometry = "+0-0"

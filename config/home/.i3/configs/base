@@ -315,11 +315,15 @@ exec --no-startup-id dunst
 # purple-libnotify+ did not seem particularly stable (crashes Finch) for me.
 exec --no-startup-id ~/.i3/i3companion/purple.py
 
+# Force the display off. For some reason, i3 seems to change which window is
+# focussed when the display is turned off (or on?) - this also happens when
+# starting i3lock with --dpms
+bindsym $mod+F3 exec --no-startup-id xset dpms force suspend
+
 # Misc TODO:
 # - actions
 #   - find_window
 #   - recover window (unsure if I still need it)
-# - Key to DPMS screen to standby/off now
 # - Toggle DPMS and screensaver
 # - xautolock [ -toggle ]
 # - port wmii plugins, or turn into standalone scripts

@@ -79,24 +79,19 @@ def is_playing():
 	except dbus.DBusException:
 		return False
 
-_blacklist_mute = False
 def do_ad_blacklist(artist, title):
-	import pulse
-	global _blacklist_mute
-
 	if artist in ad_blacklist or (artist, title) in ad_blacklist:
-		if not _blacklist_mute:
-			_blacklist_mute = True
-			pulse.PulseAppVolume()('Spotify', mute=True)
+		spotify_pulse_mute(True)
 		return ' (AD MUTED)'
-	elif _blacklist_mute:
-		_blacklist_mute = False
-		pulse.PulseAppVolume()('Spotify', mute=False)
+	spotify_pulse_mute(False)
 	return ''
 
 def _status():
 	(artist, title) = (None, None)
 	metadata = spotify_info()
+	if metadata == {}:
+		spotify_pulse_mute(True)
+		return 'NO METADATA - ASSUMING AD AND MUTING'
 	tmp = ''
 	if 'xesam:artist' in metadata and metadata['xesam:artist']:
 		artist = metadata['xesam:artist']
@@ -106,8 +101,6 @@ def _status():
 	if 'xesam:title' in metadata and metadata['xesam:title']:
 		title = metadata['xesam:title']
 		tmp += '%s ' % title
-	else:
-		tmp += '%s ' % status['url']
 	tmp += do_ad_blacklist(artist, title)
 	return tmp
 	#return '%s[%s/%s]' % (tmp, status['position'], status['duration'])
@@ -130,10 +123,11 @@ def spotify_pulse_vol(delta):
 	(vol, mute) = pulse.PulseAppVolume()('Spotify', vol_delta=delta)
 	return '%.0f%%' % (vol*100.0)
 
-def spotify_pulse_mute():
+def spotify_pulse_mute(mute=None):
 	# TODO: If spotify is not connected, redirect command back to mixer
 	import pulse
-	(vol, mute) = pulse.PulseAppVolume()('Spotify', toggle_mute=True)
+	toggle_mute = mute == None
+	(vol, mute) = pulse.PulseAppVolume()('Spotify', toggle_mute=toggle_mute, mute=mute)
 	if not mute:
 		return '%.0f%%' % (vol*100.0)
 

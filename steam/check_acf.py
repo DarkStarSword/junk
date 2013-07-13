@@ -105,6 +105,14 @@ def check_all_depot_files_exist(mounted_depots, library_root, game_path, indent,
 
 	return (ok, filenames)
 
+def mkdir_recursive(path):
+	if os.path.isdir(path):
+		return
+
+	dirname = pretty_dirname = os.path.dirname(path)
+	mkdir_recursive(dirname)
+	os.mkdir(path)
+
 def insensitive_path(path, opts):
 	if os.path.exists(path):
 		return (True, path, None)
@@ -133,14 +141,32 @@ def insensitive_path(path, opts):
 
 def find_extra_files(game_path, known_filenames, indent, opts):
 	known_filenames_l = set(map(str.lower, known_filenames))
-	for (root, dirs, files) in os.walk(game_path, topdown = not opts.delete):
+	if opts.move:
+		dest_root = os.path.realpath(os.path.join(game_path, '..'))
+		dest_root = os.path.join(dest_root, os.path.basename(game_path) + '~EXTRANEOUS')
+	for (root, dirs, files) in os.walk(game_path, topdown = not (opts.delete or opts.move)):
 		for fname in dirs + files:
 			path = os.path.join(root, fname)
 			if path in known_filenames:
 				continue
 			ui._print(indent, end='')
 			extra='\n'
-			if opts.delete:
+			if opts.move:
+				if fname in dirs:
+					try:
+						os.rmdir(path)
+						extra = ' (REMOVED)\n'
+					except OSError, e:
+						extra = ' %s\n' % str(e)
+				else:
+					dest = os.path.join(dest_root, os.path.relpath(path, game_path))
+					try:
+						mkdir_recursive(os.path.dirname(dest))
+						os.rename(path, dest)
+						extra = '\n%s  --> %s\n' % (indent, os.path.relpath(dest))
+					except OSError, e:
+						extra = ' %s\n' % str(e)
+			elif opts.delete:
 				extra = ' (DELETED)\n'
 				if fname in dirs:
 					os.rmdir(path)
@@ -233,7 +259,7 @@ def check_acf(acf_filename, opts):
 	if not ok: return
 
 	(ok, filenames) = check_all_depot_files_exist(mounted_depots, library_root, game_path, g_indent*2, opts)
-	if opts.extra or opts.delete:
+	if opts.extra or opts.delete or opts.move:
 		if opts.verbose: # So they don't appear to be under a manifest heading
 			ui._print(g_indent*2 + 'Untracked files:')
 		find_extra_files(game_path, filenames, g_indent*3, opts)
@@ -253,6 +279,7 @@ def main():
 	# '-d': Interractively delete (implies -e) files that not listed in the manifest file
 	parser.add_option('-D', '--delete', action='store_true',
 			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. Also beware that a few games (e.g. Borderlands) still have their DLC managed by the legacy NCF format, which this script is not aware of and could therefore delete required files. BE CAREFUL WITH THIS OPTION!')
+	parser.add_option('-M', '--move', action='store_true', help="Move any extraneous files to SteamApps/common/game~EXTRANEOUS (implies -e). rsync may be used to merge them back into the game directory later.")
 	parser.add_option('-U', '--uninstall', action='store_true',
 			help="Mark games with bad acf files (Currently that means 0 depotcaches mounted, but that definition may change in the future) as uninstalled. This WILL NOT DELETE THE GAME - it is intended to quickly remove bad acf files that may be interfering with launching or updating particular games. These games will need to be manually re-installed in Steam. (NOTE: Restart Steam afterwards)")
 	# TODO:

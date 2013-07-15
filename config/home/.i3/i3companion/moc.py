@@ -26,7 +26,7 @@ def is_running():
 	assert(False)
 
 def mocp_info():
-	output = subprocess.check_output('mocp -i'.split()).split('\n')
+	output = subprocess.check_output('mocp -i'.split(), stderr=open('/dev/null', 'w')).split('\n')
 	output = [ line.split(': ', 1) for line in output if line.split() ]
 	return dict(output)
 

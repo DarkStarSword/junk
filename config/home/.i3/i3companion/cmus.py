@@ -27,7 +27,7 @@ def is_running():
 	assert(False)
 
 def cmus_info():
-	output = subprocess.check_output('cmus-remote -Q'.split()).split('\n')
+	output = subprocess.check_output('cmus-remote -Q'.split(), stderr=open('/dev/null', 'w')).split('\n')
 	tags = {}
 	status = {}
 	settings = {}

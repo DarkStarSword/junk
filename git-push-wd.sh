@@ -12,10 +12,21 @@ die()
 	exit 1
 }
 
+usage_and_die()
+{
+	die "Usage: $0 remote_target [ --ignore-untracked ]"
+}
+
 deploy_commit="last-deployed"
 
 remote="$1"; shift
-[ -z "$remote" ] && die Usage: remote_target
+[ -z "$remote" ] && usage_and_die
+
+if [ "$1" = "--ignore-untracked" ]; then
+	ignore_untracked=1
+elif [ -n "$1" ]; then
+	usage_and_die
+fi
 
 host=$(git remote -v|grep "^$remote\\s.*(push)"|perl -pe 's|^.*ssh://(.*?)/(.*) .*$|\1|')
 rdir=/$(git remote -v|grep "^$remote\\s.*(push)"|perl -pe 's|^.*ssh://(.*?)/(.*) .*$|\2|')
@@ -23,7 +34,11 @@ rdir=/$(git remote -v|grep "^$remote\\s.*(push)"|perl -pe 's|^.*ssh://(.*?)/(.*)
 last_commit=$(git rev-parse HEAD)
 git commit -m git_remote_build_index_state
 index_state=$(git rev-parse HEAD)
-git add -A $(git rev-parse --show-toplevel) # Otherwise it's only subdirectories
+if [ "$ignore_untracked" = 1 ]; then
+	git add -u $(git rev-parse --show-toplevel) # Otherwise it's only subdirectories
+else
+	git add -A $(git rev-parse --show-toplevel) # Otherwise it's only subdirectories
+fi
 git commit -m git_remote_build_working_tree_state
 working_tree_state=$(git rev-parse HEAD)
 

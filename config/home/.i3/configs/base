@@ -23,17 +23,17 @@ font -misc-fixed-medium-r-normal--10-*-*-*-*-*-iso10646-*
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec i3-sensible-terminal
+bindsym $mod+Return exec exec i3-sensible-terminal
 
 # kill focused window
 bindsym $mod+Shift+c kill
 
 # start dmenu (a program launcher)
-bindsym $mod+p exec dmenu_run -b
+bindsym $mod+p exec exec dmenu_run -b
 # There also is the (new) i3-dmenu-desktop which only displays applications
 # shipping a .desktop file. It is a wrapper around dmenu, so you need that
 # installed.
-bindsym $mod+Shift+p exec --no-startup-id i3-dmenu-desktop --dmenu='dmenu -b'
+bindsym $mod+Shift+p exec --no-startup-id exec i3-dmenu-desktop --dmenu='dmenu -b'
 
 # change focus
 bindsym $mod+$left  focus left
@@ -126,9 +126,9 @@ bindsym $mod+Shift+9 move container to workspace 9
 bindsym $mod+Shift+0 move container to workspace 10
 
 # reload the configuration file
-bindsym $mod+Control+C exec --no-startup-id sh -c '$i3_regen_config && i3-msg reload'
+bindsym $mod+Control+C exec --no-startup-id exec sh -c '$i3_regen_config && i3-msg reload'
 # restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
-bindsym $mod+Control+R exec --no-startup-id sh -c '$i3_regen_config && i3-msg restart'
+bindsym $mod+Control+R exec --no-startup-id exec sh -c '$i3_regen_config && i3-msg restart'
 # exit i3 (logs you out of your X session)
 bindsym $mod+Control+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
 
@@ -167,8 +167,8 @@ mode "i3 keys released! $mod+Control+t to re-grab" {
 bindsym $mod+Control+t mode "i3 keys released! $mod+Control+t to re-grab"
 
 # Ian's extras
-# set $lock i3lock --dpms -i ~/.i3/lock-800x480.png
-set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
+# set $lock exec --no-startup-id exec i3lock --dpms -i ~/.i3/lock-800x480.png
+set $lock exec --no-startup-id exec i3lock --dpms -t -i ~/.i3/lock-tiled.png
 
 # i3 BUG FIXME: Variables within variables appear to be expanded to an empty string
 # set $terminal i3-sensible-terminal -e
@@ -176,21 +176,24 @@ set $lock i3lock --dpms -t -i ~/.i3/lock-tiled.png
 # set $vol_delta 5
 # set $mute_channel Master
 
-set $browser           --no-startup-id notify-send -t 500 'Launching Browser...'; exec sensible-browser
-set $email             i3-sensible-terminal -bg Black -fg White -e sup-mail
-set $rss               i3-sensible-terminal -e canto
-set $network_manager   i3-sensible-terminal -e wicd-curses
-set $bluetooth_manager blueman-manager
-set $chat              i3-sensible-terminal -bg Black -fg White -e finch
-set $irc               i3-sensible-terminal -e irssi
-set $python            i3-sensible-terminal -bg Black -fg White -e ipython
-set $calc              i3-sensible-terminal -e calc
-set $calendar          i3-sensible-terminal -e wyrd
-set $voip              mumble
+set $browser           exec --no-startup-id exec notify-send -t 500 'Launching Browser...'; exec exec sensible-browser
+set $email             exec exec i3-sensible-terminal -bg Black -fg White -e sup-mail
+set $rss               exec exec i3-sensible-terminal -e canto
+set $network_manager   exec exec i3-sensible-terminal -e wicd-curses
+set $bluetooth_manager exec exec blueman-manager
+set $chat              exec exec i3-sensible-terminal -bg Black -fg White -e finch
+set $irc               exec exec i3-sensible-terminal -e irssi
+set $python            exec exec i3-sensible-terminal -bg Black -fg White -e ipython
+set $calc              exec exec i3-sensible-terminal -e calc
+set $calendar          exec exec i3-sensible-terminal -e wyrd
+set $voip              exec exec mumble
+set $eject             exec --no-startup-id exec eject
 # TODO: Statusbar
-set $music1            i3-sensible-terminal -e cmus
-set $music2            i3-sensible-terminal -e mocp
-set $mixer             --no-startup-id "sh -c 'if which pavucontrol; then i3-msg exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
+set $music1            exec exec i3-sensible-terminal -e cmus
+set $music2            exec exec i3-sensible-terminal -e mocp
+set $mixer             exec --no-startup-id "exec sh -c 'if which pavucontrol >/dev/null; then i3-msg exec exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
+
+set $i3_companion_cmd  exec --no-startup-id exec ~/.i3/i3companion/commands.py
 
 # TODO: Allow multiple channels to be synchronised (e.g. when subwoofers, dock
 # or other unusual outputs do not slave off master or pcm in hardware)
@@ -201,21 +204,9 @@ set $mixer             --no-startup-id "sh -c 'if which pavucontrol; then i3-msg
 # (unattributed high CPU usage) if the volume buttons are held down (too many
 # execs I think). I should turn my wmii plugin into a daemon that grabs the
 # keys itself
-set $vol_down exec --no-startup-id amixer set Master 2-;     exec --no-startup-id killall -SIGUSR1 i3status
-set $vol_up   exec --no-startup-id amixer set Master 2+;     exec --no-startup-id killall -SIGUSR1 i3status
-set $vol_mute exec --no-startup-id amixer set Master toggle; exec --no-startup-id killall -SIGUSR1 i3status
-
-# TODO: Daemonise this for increased responsiveness & cmus mute needs to
-# remember volume to unmute at
-set $smart_vol_down exec --no-startup-id ~/.i3/i3companion/commands.py vol down
-set $smart_vol_up   exec --no-startup-id ~/.i3/i3companion/commands.py vol up
-set $smart_vol_mute exec --no-startup-id ~/.i3/i3companion/commands.py vol mute
-
-set $music_prev  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Previous Track'
-set $music_play  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play'
-set $music_pause exec --no-startup-id ~/.i3/i3companion/commands.py music 'Play/Pause'
-set $music_stop  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Stop'
-set $music_next  exec --no-startup-id ~/.i3/i3companion/commands.py music 'Next Track'
+set $vol_down exec --no-startup-id exec amixer set Master 2-;     exec --no-startup-id exec killall -SIGUSR1 i3status
+set $vol_up   exec --no-startup-id exec amixer set Master 2+;     exec --no-startup-id exec killall -SIGUSR1 i3status
+set $vol_mute exec --no-startup-id exec amixer set Master toggle; exec --no-startup-id exec killall -SIGUSR1 i3status
 
 # Alternate modes for opening terminals
 set $term_large_font -fa Monospace -fs 24 # For viewing from across the room
@@ -227,29 +218,31 @@ new_float         normal 1
 # hide_edge_borders both
 
 # TODO: spawn xautolock
-bindsym XF86ScreenSaver exec --no-startup-id $lock
-bindsym XF86Sleep       exec --no-startup-id $lock
-bindsym XF86Suspend     exec --no-startup-id $lock
-bindsym $mod+grave      exec --no-startup-id $lock
+bindsym XF86ScreenSaver $lock
+bindsym XF86Sleep       $lock
+bindsym XF86Suspend     $lock
+bindsym $mod+grave      $lock
 
-bindsym XF86AudioLowerVolume      $smart_vol_down
+# TODO: Daemonise the i3_companion versions for increased responsiveness & cmus
+# mute needs to remember volume to unmute at
+bindsym XF86AudioLowerVolume      $i3_companion_cmd vol down
 bindsym $mod+XF86AudioLowerVolume $vol_down
-bindsym $mod+bracketleft          $smart_vol_down
+bindsym $mod+bracketleft          $i3_companion_cmd vol down
 bindsym $mod+Control+bracketleft  $vol_down
 
-bindsym XF86AudioRaiseVolume      $smart_vol_up
+bindsym XF86AudioRaiseVolume      $i3_companion_cmd vol up
 bindsym $mod+XF86AudioRaiseVolume $vol_up
-bindsym $mod+bracketright         $smart_vol_up
+bindsym $mod+bracketright         $i3_companion_cmd vol up
 bindsym $mod+Control+bracketright $vol_up
 
-bindsym XF86AudioMute             $smart_vol_mute
+bindsym XF86AudioMute             $i3_companion_cmd vol mute
 bindsym $mod+XF86AudioMute        $vol_mute
-bindsym $mod+backslash            $smart_vol_mute
+bindsym $mod+backslash            $i3_companion_cmd vol mute
 bindsym $mod+Control+backslash    $vol_mute
 
-bindsym $mod+XF86AudioPlay        exec $mixer
-bindsym $mod+XF86AudioPause       exec $mixer
-bindsym $mod+Shift+backslash      exec $mixer
+bindsym $mod+XF86AudioPlay        $mixer
+bindsym $mod+XF86AudioPause       $mixer
+bindsym $mod+Shift+backslash      $mixer
 
 # TODO: Allow the XF86Audio* grabs to be released to allow applications that
 # want to grab them directly can do so
@@ -257,51 +250,51 @@ bindsym $mod+Shift+backslash      exec $mixer
 # TODO: bindsym $mod+Control+XF86AudioPause toggle_audio_grab()
 # TODO: bindsym $mod+Control+XF86AudioMute  toggle_volume_grab()
 
-bindsym XF86Calculator exec $calc
-bindsym XF86HomePage   exec $browser
-bindsym XF86Mail       exec $email
-bindsym XF86Eject      exec --no-startup-id eject
-bindsym XF86TouchpadToggle       exec --no-startup-id ~/.i3/i3companion/commands.py toggle input trackpad
-bindsym Shift+XF86TouchpadToggle exec --no-startup-id ~/.i3/i3companion/commands.py toggle input trackpoint
-bindsym XF86AudioPrev  $music_prev
-bindsym XF86AudioPlay  $music_pause
-bindsym XF86AudioPause $music_pause
-bindsym XF86AudioStop  $music_stop
-bindsym XF86AudioNext  $music_next
+bindsym XF86Calculator $calc
+bindsym XF86HomePage   $browser
+bindsym XF86Mail       $email
+bindsym XF86Eject      $eject
+bindsym XF86TouchpadToggle       $i3_companion_cmd toggle input trackpad
+bindsym Shift+XF86TouchpadToggle $i3_companion_cmd toggle input trackpoint
+bindsym XF86AudioPrev  $i3_companion_cmd music 'Previous Track'
+bindsym XF86AudioPlay  $i3_companion_cmd music 'Play/Pause'
+bindsym XF86AudioPause $i3_companion_cmd music 'Play/Pause'
+bindsym XF86AudioStop  $i3_companion_cmd music 'Stop'
+bindsym XF86AudioNext  $i3_companion_cmd music 'Next Track'
 
-bindsym $mod+Shift+Return         exec i3-sensible-terminal $term_large_font
-bindsym $mod+Control+Return       exec i3-sensible-terminal $term_bw
-bindsym $mod+Control+Shift+Return exec i3-sensible-terminal $term_large_font $term_bw
+bindsym $mod+Shift+Return         exec exec i3-sensible-terminal $term_large_font
+bindsym $mod+Control+Return       exec exec i3-sensible-terminal $term_bw
+bindsym $mod+Control+Shift+Return exec exec i3-sensible-terminal $term_large_font $term_bw
 
-bindsym $mod+w         exec $browser
-bindsym $mod+e         exec $email
-bindsym $mod+r         exec $rss
-bindsym $mod+y         exec $python
-bindsym $mod+u         exec $music1
-bindsym $mod+i         exec $irc
-bindsym $mod+o         exec $music2
-bindsym $mod+Shift+a   exec $chat
-bindsym $mod+g         exec $calendar
-bindsym $mod+z         $music_prev
-bindsym $mod+x         $music_play
-bindsym $mod+c         $music_pause
-bindsym $mod+v         $music_stop
-bindsym $mod+Shift+v   exec $voip
-bindsym $mod+b         $music_next
-bindsym $mod+Shift+b   exec $bluetooth_manager
-bindsym $mod+n         exec $network_manager
+bindsym $mod+w         $browser
+bindsym $mod+e         $email
+bindsym $mod+r         $rss
+bindsym $mod+y         $python
+bindsym $mod+u         $music1
+bindsym $mod+i         $irc
+bindsym $mod+o         $music2
+bindsym $mod+Shift+a   $chat
+bindsym $mod+g         $calendar
+bindsym $mod+z         $i3_companion_cmd music 'Previous Track'
+bindsym $mod+x         $i3_companion_cmd music 'Play'
+bindsym $mod+c         $i3_companion_cmd music 'Play/Pause'
+bindsym $mod+v         $i3_companion_cmd music 'Stop'
+bindsym $mod+Shift+v   $voip
+bindsym $mod+b         $i3_companion_cmd music 'Next Track'
+bindsym $mod+Shift+b   $bluetooth_manager
+bindsym $mod+n         $network_manager
 # bindsym $mod+comma  used by dunst!
 # bindsym $mod+period used by dunst!
-bindsym $mod+slash     exec $calc
+bindsym $mod+slash     $calc
 
 # Mark & Goto windows
-bindsym $mod+m          exec --no-startup-id i3-input -F 'mark %s' -l 1 -P 'Mark: '
-bindsym $mod+apostrophe exec --no-startup-id i3-input -F '[con_mark="%s"] focus' -l 1 -P 'Go to: '
+bindsym $mod+m          exec --no-startup-id exec i3-input -F 'mark %s' -l 1 -P 'Mark: '
+bindsym $mod+apostrophe exec --no-startup-id exec i3-input -F '[con_mark="%s"] focus' -l 1 -P 'Go to: '
 
 # Find a window by it's title
 # bindsym $mod+q exec --no-startup-id i3-input -F '[title="(?i)%s"] focus' -P 'Find window: '
 # bindsym $mod+q exec --no-startup-id quickswitch.py
-bindsym $mod+q exec --no-startup-id "sh -c 'if which quickswitch.py; then quickswitch.py; else i3-input -F [title=\(?i\)%s]\ focus -P Find\ window:\ ; fi'"
+bindsym $mod+q exec --no-startup-id "exec sh -c 'if which quickswitch.py >/dev/null; then quickswitch.py; else i3-input -F [title=\(?i\)%s]\ focus -P Find\ window:\ ; fi'"
 
 
 # Last workspace (like vim's ctrl+6 edit alternate file)
@@ -316,21 +309,21 @@ bindsym $mod+Shift+Tab move workspace to output right
 # are set in ~/.config/dunstrc (besides which, exclusively doing it here is
 # racey since dunst can be automatically started by dbus)
 # exec --no-startup-id dunst -fn "$font" -geometry +0-0 -mod $mod -key period -history_key comma
-exec --no-startup-id dunst
+exec --no-startup-id exec dunst
 
 # This redirects ReceivedChatMsg and RecievedImMsg from libpurple clients
 # running the "DBus Example" plugin to libnotify. This is particularly useful
 # for Finch since pidgin-libnotify is incompatible with it and
 # purple-libnotify+ did not seem particularly stable (crashes Finch) for me.
-exec --no-startup-id ~/.i3/i3companion/purple.py
+exec --no-startup-id exec ~/.i3/i3companion/purple.py
 
 # Force the display off. For some reason, i3 seems to change which window is
 # focussed when the display is turned off (or on?) - this also happens when
 # starting i3lock with --dpms
-bindsym $mod+F3 exec --no-startup-id xset dpms force suspend
+bindsym $mod+F3 exec --no-startup-id exec xset dpms force suspend
 
 # Toggle screensaver + DPMS
-bindsym $mod+F4 exec --no-startup-id ~/.i3/i3companion/toggle_blanking.sh
+bindsym $mod+F4 exec --no-startup-id exec ~/.i3/i3companion/toggle_blanking.sh
 
 # Misc TODO:
 # - xautolock [ -toggle ]

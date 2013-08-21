@@ -1,0 +1,17 @@
+! Swap left Alt & Super keys:
+remove Mod1 = Alt_L
+remove Mod4 = Super_L
+keysym Alt_L = Super_L
+! keycode 64 = Super_L
+keysym Super_L = Alt_L
+! keycode 133 = Alt_L
+add Mod1 = Alt_L
+add Mod4 = Super_L
+
+! Keyboard is missing Delete & Insert keys, replace Right Super & Alt with them
+remove Mod4 = Super_R
+remove Mod1 = Alt_R
+keysym Super_R = Delete
+! keycode 134 = Delete
+keysym Alt_R = Insert
+! keycode 108 = Insert

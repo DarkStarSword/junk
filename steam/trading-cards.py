@@ -11,7 +11,9 @@
 # drops have been obtained & traded away and the game has not been played in
 # the last two weeks.
 
+from HTMLParser import HTMLParser
 import sys
+import re
 
 cache_timeout = 3 * 60 * 60 # 3 Hours
 
@@ -23,6 +25,8 @@ card_search_cache = '.trading-cards-cache-page-%i'
 # for vanity URLs. Second %s is replaced with profile ID.
 profile_games_url = 'http://steamcommunity.com/%s/%s/games?tab=all&xml=1'
 profile_games_cache = '.trading-cards-games-cache-%s-%s'
+profile_badges_url = 'http://steamcommunity.com/%s/%s/badges/'
+profile_badges_cache = '.trading-cards-badge-cache-%s-%s'
 
 # http://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI
 # %s replaced with comma separated list of appIDs to query
@@ -47,10 +51,7 @@ def geturl_cached(url, cache):
 	return open(cache)
 
 def steam_search_card_apps():
-	from HTMLParser import HTMLParser
 	class SteamSearchResultParser(HTMLParser):
-		import re
-
 		appID_url = re.compile(r'http://store\.steampowered\.com/app/(?P<appID>\d+)/');
 		a_class = 'search_result_row'
 		pagination_onclick = 'SearchLinkClick('
@@ -99,6 +100,11 @@ def steam_search_card_apps():
 		page += 1
 	return parser.apps
 
+def steam_profile_sub(profile):
+	if profile.isdigit():
+		return ('profiles', profile)
+	return ('id', profile)
+
 def steam_profile_games(profile):
 	try:
 		from defusedxml import minidom
@@ -106,13 +112,64 @@ def steam_profile_games(profile):
 		print>>sys.stderr, 'WARNING: pyhon-defusedxml not available, falling back to unsafe standard libraries...'
 		from xml.dom import minidom
 
-	sub = ('id', profile)
-	if profile.isdigit():
-		sub = ('profiles', profile)
+	sub = steam_profile_sub(profile)
 	xml = minidom.parse(geturl_cached(profile_games_url % sub, profile_games_cache % sub))
 
 	return [ int(game.getElementsByTagName('appID')[0].firstChild.data) \
 			for game in xml.getElementsByTagName('game') ]
+
+def steam_profile_badges(profile):
+	class SteamProfileBadgesParser(HTMLParser):
+		badge_url = re.compile(r'http://steamcommunity\.com/id/[^/]+/[^/]+/(?P<appID>\d+)/(?P<foil>\?border=1)?')
+		badge_class = 'badge_row '
+		badge_level = re.compile(r'Level (?P<level>\d+),')
+
+		def __init__(self):
+			HTMLParser.__init__(self)
+			self.in_badge = 0
+			self.apps = {}
+			self.in_app = None
+
+		def handle_a(self, attrs):
+			match = self.badge_url.match(attrs['href'])
+			if match is None:
+				return
+			appID = int(match.group('appID'))
+			if appID not in self.apps:
+				self.apps[appID] = {}
+			if match.group('foil') is not None:
+				self.apps[appID]['foil'] = True
+				self.in_badge = 0
+				return
+			self.in_app = appID
+
+		def handle_div(self, attrs):
+			if self.in_badge or ('class' in attrs and attrs['class'].startswith(self.badge_class)):
+				self.in_badge += 1
+
+		def handle_starttag(self, tag, attrs):
+			attrs = dict(attrs)
+			if tag == 'a' and 'href' in attrs:
+				return self.handle_a(attrs)
+			if tag == 'div':
+				return self.handle_div(attrs)
+
+		def handle_endtag(self, tag):
+			if self.in_badge and tag == 'div':
+				self.in_badge -= 1
+			if self.in_badge == 0:
+				self.in_app = None
+
+		def handle_data(self, data):
+			if self.in_badge and self.in_app:
+				match = self.badge_level.match(data.lstrip())
+				if match:
+					self.apps[self.in_app]['level'] = int(match.group('level'))
+
+	sub = steam_profile_sub(profile)
+	parser = SteamProfileBadgesParser()
+	parser.feed(geturl_cached(profile_badges_url % sub, profile_badges_cache % sub).read())
+	return parser.apps
 
 def _steam_appdetails(appIDs):
 	import hashlib
@@ -160,14 +217,16 @@ def classify_steam_apps(apps):
 
 def print_apps(apps, games):
 	totals = {}
-	print "  appID  | Own | Type | Title"
-	print "---------+-----+------+------"
-	for (id, app) in sorted(apps.items(), cmp=lambda x,y: cmp(x[1], y[1])):
+	print "  appID  | Own | Level | Foil | Type | Title"
+	print "---------+-----+-------+------+------+------"
+	for (id, app) in sorted(apps.items(), cmp=lambda x,y: cmp(x[1]['title'], y[1]['title'])):
 		owned = ' '
 		if id in games:
 			owned = 'Y'
 			totals[app['type']] = totals.get(app['type'], 0) + 1
-		print "%8i |  %s  | %4s | %s" % (id, owned, app['type'], app['title'])
+		level = str(app.get('level', ' '))
+		foil = {True: 'Y', False: ' '}[app.get('foil', False)]
+		print "%8i |  %s  |   %s   |   %s  | %4s | %s" % (id, owned, level, foil, app['type'], app['title'])
 	print
 	for type in totals:
 		print '%3i %s with Trading Cards Owned' % (totals[type], type)
@@ -183,6 +242,13 @@ def main():
 
 	card_apps = steam_search_card_apps()
 	profile_games = steam_profile_games(steam_profile)
+	profile_badges = steam_profile_badges(steam_profile)
+
+	for (appID, badge) in profile_badges.items():
+		try:
+			card_apps[appID].update(badge)
+		except KeyError:
+			print 'SKIPPING %i' % appID
 
 	classify_steam_apps(card_apps)
 	games = filter(lambda appID: appID in card_apps, profile_games)

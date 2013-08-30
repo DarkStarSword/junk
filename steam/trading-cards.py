@@ -26,9 +26,9 @@ profile_games_cache = '.trading-cards-games-cache-%s-%s'
 
 # http://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI
 # %s replaced with comma separated list of appIDs to query
-appid_url = 'http://store.steampowered.com/api/appdetails/?appids=%s&filters=basic,categories'
+appid_url = 'http://store.steampowered.com/api/appdetails/?appids=%s&filters=basic,genres'
 # %s replaced with hash of all requested appIDs
-appid_cache = '.trading-cards-appID-cache-%s'
+appid_cache = '.trading-cards-appID-cache-%s-basic,genres'
 appids_per_request = 25
 
 def geturl_cached(url, cache):
@@ -86,7 +86,8 @@ def steam_search_card_apps():
 			if self.in_pagination:
 				self.pages = max(self.pages, int(data))
 			if self.in_app_title:
-				self.apps[self.in_appID] = data.strip()
+				# NOTE: Title may be overridden from appdetails
+				self.apps[self.in_appID] = {'title': data.strip()}
 
 	parser = SteamSearchResultParser()
 	page = 1
@@ -126,59 +127,69 @@ def steam_appdetails(appIDs):
 	while len(appIDs):
 		request = appIDs[:appids_per_request]
 		appIDs = appIDs[appids_per_request:]
-		content = _steam_appdetails(request)
-		ret.update(json.loads(content.read()))
+		ret.update(json.loads(_steam_appdetails(request).read()))
 	return ret
 
-def filter_steam_appdetails_trading_cards(appIDs):
+def classify_steam_apps(apps):
+	def trans(type):
+		try:    return {'dlc': 'DLC'}[str(type)]
+		except: return str(type).title()
+
 	ret = []
-	info = steam_appdetails(appIDs)
+	info = steam_appdetails(apps.keys())
 	for appID in info:
 		try:
-			for category in info[appID]['data']['categories']:
-				if category['description'] == 'Steam Trading Cards':
-					print>>sys.stderr, '%s (%s) has trading cards, fullgame = %s (%s)' % \
-							(appID, info[appID]['data']['name'], \
-							info[appID]['data']['fullgame']['appid'], \
-							info[appID]['data']['fullgame']['name'])
-					ret.append(int(info[appID]['data']['fullgame']['appid']))
+			data = info[appID]['data']
+			appID = int(appID)
+
+			apps[appID]['type'] = trans(data['type'])
+			if apps[appID]['type'] == 'Demo':
+				del apps[appID]
+				continue
+			if apps[appID]['title'] != data['name'].encode('utf-8'):
+				print>>sys.stderr, 'Overriding title for %i from search result "%s" to appdetails "%s"' % \
+					(appID, apps[appID]['title'], data['name'].encode('utf-8'))
+				apps[appID]['title'] = data['name'].encode('utf-8')
+			for genre in data['genres']:
+				if str(genre['description']) == 'Free to Play':
+					apps[appID]['type'] = 'F2P'
 		except KeyError, e:
-			if str(e) not in ["'data'", "'categories'"]:
-				print>>sys.stderr, 'Skipping %s - appdetails has no %s' % (appID, str(e))
+			print>>sys.stderr, 'Skipping %s - appdetails has no %s' % (appID, str(e))
 			continue
 	return ret
 
-def print_apps(apps, games, demos):
-	print "  appID  | Own | Title"
-	print "---------+-----+------"
+def print_apps(apps, games):
+	totals = {}
+	print "  appID  | Own | Type | Title"
+	print "---------+-----+------+------"
 	for (id, app) in sorted(apps.items(), cmp=lambda x,y: cmp(x[1], y[1])):
 		owned = ' '
 		if id in games:
 			owned = 'Y'
-		elif id in demos:
-			owned = 'D'
-		print "%8i |  %s  | %s" % (id, owned, app)
+			totals[app['type']] = totals.get(app['type'], 0) + 1
+		print "%8i |  %s  | %4s | %s" % (id, owned, app['type'], app['title'])
+	print
+	for type in totals:
+		print '%3i %s with Trading Cards Owned' % (totals[type], type)
+
+def usage():
+	print "Usage: %s ProfileID" % sys.argv[0]
 
 def main():
+	if len(sys.argv) != 2:
+		usage()
+		sys.exit(1)
 	steam_profile = sys.argv[1]
 
 	card_apps = steam_search_card_apps()
 	profile_games = steam_profile_games(steam_profile)
 
+	classify_steam_apps(card_apps)
 	games = filter(lambda appID: appID in card_apps, profile_games)
-	unmatched = filter(lambda appID: appID not in card_apps, profile_games)
-	demos = []
 
 	print>>sys.stderr, '%i/%i games matched store trading card query' % (len(games), len(profile_games))
 
-	if unmatched:
-		print>>sys.stderr, 'Fetching details for remaining %i games...' % len(unmatched)
-		demos = filter_steam_appdetails_trading_cards(unmatched)
-
-	print_apps(card_apps, games, demos)
-
-	print
-	print '%i Games with Trading Cards Owned' % len(games)
+	print_apps(card_apps, games)
 
 if __name__ == '__main__':
 	main()

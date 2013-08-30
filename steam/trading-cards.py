@@ -13,15 +13,23 @@
 
 import sys
 
+cache_timeout = 3 * 60 * 60 # 3 Hours
+
 # %i will be replaced by the page number
 card_search_url = 'http://store.steampowered.com/search/?sort_by=Name&sort_order=ASC&&category2=29&page=%i'
 card_search_cache = '.trading-cards-cache-page-%i'
-cache_timeout = 60 * 60 # 1 Hour
 
 # First %s replaced with "profiles" if profile ID is numeric, otherwise "ids"
 # for vanity URLs. Second %s is replaced with profile ID.
 profile_games_url = 'http://steamcommunity.com/%s/%s/games?tab=all&xml=1'
 profile_games_cache = '.trading-cards-games-cache-%s-%s'
+
+# http://wiki.teamfortress.com/wiki/User:RJackson/StorefrontAPI
+# %s replaced with comma separated list of appIDs to query
+appid_url = 'http://store.steampowered.com/api/appdetails/?appids=%s&filters=basic,categories'
+# %s replaced with hash of all requested appIDs
+appid_cache = '.trading-cards-appID-cache-%s'
+appids_per_request = 25
 
 def geturl_cached(url, cache):
 	import urllib2, os, time
@@ -105,11 +113,50 @@ def steam_profile_games(profile):
 	return [ int(game.getElementsByTagName('appID')[0].firstChild.data) \
 			for game in xml.getElementsByTagName('game') ]
 
-def print_apps(apps, games):
+def _steam_appdetails(appIDs):
+	import hashlib
+
+	sub = ','.join(map(str, appIDs))
+	hash = hashlib.sha1(sub).hexdigest()
+	return geturl_cached(appid_url % sub, appid_cache % hash)
+
+def steam_appdetails(appIDs):
+	import json
+	ret = {}
+	while len(appIDs):
+		request = appIDs[:appids_per_request]
+		appIDs = appIDs[appids_per_request:]
+		content = _steam_appdetails(request)
+		ret.update(json.loads(content.read()))
+	return ret
+
+def filter_steam_appdetails_trading_cards(appIDs):
+	ret = []
+	info = steam_appdetails(appIDs)
+	for appID in info:
+		try:
+			for category in info[appID]['data']['categories']:
+				if category['description'] == 'Steam Trading Cards':
+					print>>sys.stderr, '%s (%s) has trading cards, fullgame = %s (%s)' % \
+							(appID, info[appID]['data']['name'], \
+							info[appID]['data']['fullgame']['appid'], \
+							info[appID]['data']['fullgame']['name'])
+					ret.append(int(info[appID]['data']['fullgame']['appid']))
+		except KeyError, e:
+			if str(e) not in ["'data'", "'categories'"]:
+				print>>sys.stderr, 'Skipping %s - appdetails has no %s' % (appID, str(e))
+			continue
+	return ret
+
+def print_apps(apps, games, demos):
 	print "  appID  | Own | Title"
 	print "---------+-----+------"
 	for (id, app) in sorted(apps.items(), cmp=lambda x,y: cmp(x[1], y[1])):
-		owned = {True: 'Y', False: ' '}[id in games]
+		owned = ' '
+		if id in games:
+			owned = 'Y'
+		elif id in demos:
+			owned = 'D'
 		print "%8i |  %s  | %s" % (id, owned, app)
 
 def main():
@@ -119,8 +166,16 @@ def main():
 	profile_games = steam_profile_games(steam_profile)
 
 	games = filter(lambda appID: appID in card_apps, profile_games)
+	unmatched = filter(lambda appID: appID not in card_apps, profile_games)
+	demos = []
 
-	print_apps(card_apps, games)
+	print>>sys.stderr, '%i/%i games matched store trading card query' % (len(games), len(profile_games))
+
+	if unmatched:
+		print>>sys.stderr, 'Fetching details for remaining %i games...' % len(unmatched)
+		demos = filter_steam_appdetails_trading_cards(unmatched)
+
+	print_apps(card_apps, games, demos)
 
 	print
 	print '%i Games with Trading Cards Owned' % len(games)

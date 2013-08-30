@@ -14,7 +14,7 @@
 import sys
 
 # %i will be replaced by the page number
-card_search_url = 'http://store.steampowered.com/search/?sort_by=Name&sort_order=ASC&category1=998&category2=29&page=%i'
+card_search_url = 'http://store.steampowered.com/search/?sort_by=Name&sort_order=ASC&&category2=29&page=%i'
 card_search_cache = '.trading-cards-cache-page-%i'
 cache_timeout = 60 * 60 # 1 Hour
 
@@ -106,11 +106,11 @@ def steam_profile_games(profile):
 			for game in xml.getElementsByTagName('game') ]
 
 def print_apps(apps, games):
-	print " appID | Own | Title"
-	print "-------+-----+------"
+	print "  appID  | Own | Title"
+	print "---------+-----+------"
 	for (id, app) in sorted(apps.items(), cmp=lambda x,y: cmp(x[1], y[1])):
 		owned = {True: 'Y', False: ' '}[id in games]
-		print "%6i |  %s  | %s" % (id, owned, app)
+		print "%8i |  %s  | %s" % (id, owned, app)
 
 def main():
 	steam_profile = sys.argv[1]

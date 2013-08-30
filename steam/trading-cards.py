@@ -15,7 +15,7 @@ from HTMLParser import HTMLParser
 import sys
 import re
 
-cache_timeout = 3 * 60 * 60 # 3 Hours
+cache_timeout = 3 * 24 * 60 * 60 # 3 Days
 
 # %i will be replaced by the page number
 card_search_url = 'http://store.steampowered.com/search/?sort_by=Name&sort_order=ASC&&category2=29&page=%i'
@@ -122,6 +122,7 @@ def steam_profile_badges(profile):
 	class SteamProfileBadgesParser(HTMLParser):
 		badge_url = re.compile(r'http://steamcommunity\.com/id/[^/]+/[^/]+/(?P<appID>\d+)/(?P<foil>\?border=1)?')
 		badge_class = 'badge_row '
+		badge_title = 'badge_title'
 		badge_level = re.compile(r'Level (?P<level>\d+),')
 
 		def __init__(self):
@@ -129,6 +130,7 @@ def steam_profile_badges(profile):
 			self.in_badge = 0
 			self.apps = {}
 			self.in_app = None
+			self.in_title = False
 
 		def handle_a(self, attrs):
 			match = self.badge_url.match(attrs['href'])
@@ -146,6 +148,8 @@ def steam_profile_badges(profile):
 		def handle_div(self, attrs):
 			if self.in_badge or ('class' in attrs and attrs['class'].startswith(self.badge_class)):
 				self.in_badge += 1
+			if 'class' in attrs and attrs['class'] == self.badge_title:
+				self.in_title = True
 
 		def handle_starttag(self, tag, attrs):
 			attrs = dict(attrs)
@@ -159,12 +163,17 @@ def steam_profile_badges(profile):
 				self.in_badge -= 1
 			if self.in_badge == 0:
 				self.in_app = None
+			self.in_title = False
 
 		def handle_data(self, data):
-			if self.in_badge and self.in_app:
+			if not self.in_app:
+				return
+			if self.in_badge:
 				match = self.badge_level.match(data.lstrip())
 				if match:
 					self.apps[self.in_app]['level'] = int(match.group('level'))
+			if self.in_title and 'title' not in self.apps[self.in_app]:
+				self.apps[self.in_app]['title'] = data.strip()
 
 	sub = steam_profile_sub(profile)
 	parser = SteamProfileBadgesParser()
@@ -195,9 +204,9 @@ def classify_steam_apps(apps):
 	ret = []
 	info = steam_appdetails(apps.keys())
 	for appID in info:
+		appID = int(appID)
 		try:
-			data = info[appID]['data']
-			appID = int(appID)
+			data = info[unicode(appID)]['data']
 
 			apps[appID]['type'] = trans(data['type'])
 			if apps[appID]['type'] == 'Demo':
@@ -211,7 +220,8 @@ def classify_steam_apps(apps):
 				if str(genre['description']) == 'Free to Play':
 					apps[appID]['type'] = 'F2P'
 		except KeyError, e:
-			print>>sys.stderr, 'Skipping %s - appdetails has no %s' % (appID, str(e))
+			print>>sys.stderr, 'Skipping %s (%s) - appdetails has no %s' % (appID, apps[appID]['title'], str(e))
+			apps[int(appID)]['type'] = '?'
 			continue
 	return ret
 
@@ -245,10 +255,11 @@ def main():
 	profile_badges = steam_profile_badges(steam_profile)
 
 	for (appID, badge) in profile_badges.items():
-		try:
-			card_apps[appID].update(badge)
-		except KeyError:
-			print 'SKIPPING %i' % appID
+		if appID not in card_apps:
+			print>>sys.stderr, 'NOTE: App %i (%s) has badges, but not listed as having trading cards in the store' % (appID, badge['title'])
+			card_apps[appID] = {}
+		badge.update(card_apps[appID])
+		card_apps[appID] = badge
 
 	classify_steam_apps(card_apps)
 	games = filter(lambda appID: appID in card_apps, profile_games)

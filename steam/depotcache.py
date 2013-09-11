@@ -7,7 +7,7 @@ from StringIO import StringIO
 def pr_unknown(data, print_unknown):
 	if print_unknown:
 		decoded = struct.unpack('%dB' % len(data), data)
-		print '[? ' + ' '.join([ '%.2X' % x for x in decoded ]) + ' ?]'
+		print>>sys.stderr, '[? ' + ' '.join([ '%.2X' % x for x in decoded ]) + ' ?]'
 
 def pr_unexpected(data, expected, note=''):
 	l = len(data)
@@ -40,16 +40,16 @@ def decode_entry(f):
 	return _decode_entry(StringIO(data))
 
 def dump_remaining_data(f):
-	print 'Remaining undecoded data:'
+	print>>sys.stderr, 'Remaining undecoded data:'
 	try:
 		while True:
 			for i in range(2):
 				for j in range(8):
-					print '%.2X' % struct.unpack('B', f.read(1))[0],
-				print '',
-			print
+					print>>sys.stderr, '%.2X' % struct.unpack('B', f.read(1))[0],
+				print>>sys.stderr, '',
+			print>>sys.stderr
 	except:
-		print
+		print>>sys.stderr
 		return
 
 def decode_depotcache(filename, print_unknown = False):
@@ -63,7 +63,7 @@ def decode_depotcache(filename, print_unknown = False):
 				yield decode_entry(f)
 			elif byte == 0xbe:
 				if print_unknown:
-					print '0xBE FOUND, ENDING'
+					print>>sys.stderr, '0xBE FOUND, ENDING'
 					dump_remaining_data(f)
 				return
 			else:
@@ -72,10 +72,10 @@ def decode_depotcache(filename, print_unknown = False):
 
 def main():
 	for filename in sys.argv[1:]:
-		print 'Decoding %s...' % filename
+		print>>sys.stderr, 'Decoding %s...' % filename
 		for entry in decode_depotcache(filename, True):
 			print entry
-		print
+		print>>sys.stderr
 
 if __name__ == '__main__':
 	main()

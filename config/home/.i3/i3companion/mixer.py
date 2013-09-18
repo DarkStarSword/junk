@@ -80,6 +80,10 @@ def intel_vol(command):
 
 	globals()['vol_%s'%command]()
 
+def intel_vol_up(): return intel_vol('up')
+def intel_vol_down(): return intel_vol('down')
+def intel_vol_mute(): return intel_vol('mute')
+
 def vol_mute():
 	m = def_mixer()
 	v = m.getmute()[0]

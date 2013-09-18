@@ -193,8 +193,6 @@ set $music1            exec exec i3-sensible-terminal -e cmus
 set $music2            exec exec i3-sensible-terminal -e mocp
 set $mixer             exec --no-startup-id "exec sh -c 'if which pavucontrol >/dev/null; then i3-msg exec exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
 
-set $i3_companion_cmd  exec --no-startup-id exec ~/.i3/i3companion/commands.py
-
 # TODO: Allow multiple channels to be synchronised (e.g. when subwoofers, dock
 # or other unusual outputs do not slave off master or pcm in hardware)
 # NOTE: Requres i3status >= v2.7
@@ -223,23 +221,6 @@ bindsym XF86Sleep       $lock
 bindsym XF86Suspend     $lock
 bindsym $mod+grave      $lock
 
-# TODO: Daemonise the i3_companion versions for increased responsiveness & cmus
-# mute needs to remember volume to unmute at
-bindsym XF86AudioLowerVolume      $i3_companion_cmd vol down
-bindsym $mod+XF86AudioLowerVolume $vol_down
-bindsym $mod+bracketleft          $i3_companion_cmd vol down
-bindsym $mod+Control+bracketleft  $vol_down
-
-bindsym XF86AudioRaiseVolume      $i3_companion_cmd vol up
-bindsym $mod+XF86AudioRaiseVolume $vol_up
-bindsym $mod+bracketright         $i3_companion_cmd vol up
-bindsym $mod+Control+bracketright $vol_up
-
-bindsym XF86AudioMute             $i3_companion_cmd vol mute
-bindsym $mod+XF86AudioMute        $vol_mute
-bindsym $mod+backslash            $i3_companion_cmd vol mute
-bindsym $mod+Control+backslash    $vol_mute
-
 bindsym $mod+XF86AudioPlay        $mixer
 bindsym $mod+XF86AudioPause       $mixer
 bindsym $mod+Shift+backslash      $mixer
@@ -254,13 +235,6 @@ bindsym XF86Calculator $calc
 bindsym XF86HomePage   $browser
 bindsym XF86Mail       $email
 bindsym XF86Eject      $eject
-bindsym XF86TouchpadToggle       $i3_companion_cmd toggle input trackpad
-bindsym Shift+XF86TouchpadToggle $i3_companion_cmd toggle input trackpoint
-bindsym XF86AudioPrev  $i3_companion_cmd music 'Previous Track'
-bindsym XF86AudioPlay  $i3_companion_cmd music 'Play/Pause'
-bindsym XF86AudioPause $i3_companion_cmd music 'Play/Pause'
-bindsym XF86AudioStop  $i3_companion_cmd music 'Stop'
-bindsym XF86AudioNext  $i3_companion_cmd music 'Next Track'
 
 bindsym $mod+Shift+Return         exec exec i3-sensible-terminal $term_large_font
 bindsym $mod+Control+Return       exec exec i3-sensible-terminal $term_bw
@@ -275,12 +249,7 @@ bindsym $mod+i         $irc
 bindsym $mod+o         $music2
 bindsym $mod+Shift+a   $chat
 bindsym $mod+g         $calendar
-bindsym $mod+z         $i3_companion_cmd music 'Previous Track'
-bindsym $mod+x         $i3_companion_cmd music 'Play'
-bindsym $mod+c         $i3_companion_cmd music 'Play/Pause'
-bindsym $mod+v         $i3_companion_cmd music 'Stop'
 bindsym $mod+Shift+v   $voip
-bindsym $mod+b         $i3_companion_cmd music 'Next Track'
 bindsym $mod+Shift+b   $bluetooth_manager
 bindsym $mod+n         $network_manager
 # bindsym $mod+comma  used by dunst!
@@ -311,10 +280,18 @@ bindsym $mod+Shift+Tab move workspace to output right
 # exec --no-startup-id dunst -fn "$font" -geometry +0-0 -mod $mod -key period -history_key comma
 exec --no-startup-id exec dunst
 
+# i3companion is responsible for handling some of the more
+# complicated keybindings (mixer, music controls, etc). I intend to
+# move most of the bindings into it leaving only bindings that are
+# directly related to i3 in this config file:
+exec --no-startup-id exec ~/.i3/i3companion/i3companion.py
+
 # This redirects ReceivedChatMsg and RecievedImMsg from libpurple clients
 # running the "DBus Example" plugin to libnotify. This is particularly useful
 # for Finch since pidgin-libnotify is incompatible with it and
 # purple-libnotify+ did not seem particularly stable (crashes Finch) for me.
+# Once i3companion has proper config parsing I'll start this from
+# inside i3companion rather than here.
 exec --no-startup-id exec ~/.i3/i3companion/purple.py
 
 # Force the display off. For some reason, i3 seems to change which window is

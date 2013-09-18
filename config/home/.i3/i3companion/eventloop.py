@@ -24,7 +24,13 @@ class EventLoop(object):
 		method(*args, **kwargs)
 
 	def poll(self, timeout=-1, maxevents=-1):
-		return self._epoll.poll(timeout, maxevents)
+		while True:
+			try:
+				return self._epoll.poll(timeout, maxevents)
+			except IOError, e:
+				if e.args[0] == 4: # Interrupted system call
+					continue
+				raise
 
 	def run(self):
 		while self.running:

@@ -3,6 +3,7 @@
 import mixer
 import music
 import trackpad
+import randr
 
 def activate_key_bindings(keybinder):
 	"""
@@ -44,3 +45,4 @@ def activate_key_bindings(keybinder):
 	keybinder.bind_key(mod,   'v',                  music.stop)
 	keybinder.bind_key(mod,   'b',                  music.next)
 
+	randr.register_xf86_keys(keybinder)

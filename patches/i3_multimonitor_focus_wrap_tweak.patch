@@ -1,0 +1,27 @@
+From bc330a80de4a626623e75dc5d86c5899ac8626fe Mon Sep 17 00:00:00 2001
+From: Ian Munsie <darkstarsword@gmail.com>
+Date: Tue, 9 Jul 2013 14:45:34 +1000
+Subject: [PATCH] Make focussing off the end of an output wrap
+
+This way feels more comfortable to me, though it may just be that I'm
+used to it from wmii.
+---
+ src/tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/tree.c b/src/tree.c
+index 836183e..0df3222 100644
+--- a/src/tree.c
++++ b/src/tree.c
+@@ -562,7 +562,7 @@ static bool _tree_next(Con *con, char way, orientation_t orientation, bool wrap)
+         else
+             return false;
+ 
+-        next_output = get_output_next(direction, current_output, CLOSEST_OUTPUT);
++        next_output = get_output_next_wrap(direction, current_output);
+         if (!next_output)
+             return false;
+         DLOG("Next output is %s\n", next_output->name);
+-- 
+1.8.4.rc3
+

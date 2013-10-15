@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from pluginmanager import notify
+from util import describe_fd
+
 class EventLoop(object):
 	import select
 
@@ -21,7 +24,15 @@ class EventLoop(object):
 
 	def dispatch(self, fd, eventmask):
 		(method, args, kwargs) = self._fds[fd]
-		method(*args, **kwargs)
+		try:
+			method(*args, **kwargs)
+		except Exception, e:
+			import sys, traceback
+			traceback.print_exc()
+			notify("i3companion: %s: %s in %s.%s(). Refer to %s for backtrace" %
+			       (e.__class__.__name__, str(e),
+				method.__module__, method.__name__,
+				describe_fd(sys.stderr)), timeout=5000)
 
 	def poll(self, timeout=-1, maxevents=-1):
 		while True:

@@ -96,7 +96,10 @@ class XKeyBinder(object):
 				continue
 
 			(keycode, modifiers) = (event.detail, event.state)
-			(func, args, kwargs) = self.bindings[(keycode, modifiers)]
+			try:
+				(func, args, kwargs) = self.bindings[(keycode, modifiers)]
+			except KeyError:
+				continue
 
 			func(*args, **kwargs)
 

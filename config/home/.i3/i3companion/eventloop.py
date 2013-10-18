@@ -29,10 +29,14 @@ class EventLoop(object):
 		except Exception, e:
 			import sys, traceback
 			traceback.print_exc()
-			notify("i3companion: %s: %s in %s.%s(). Refer to %s for backtrace" %
-			       (e.__class__.__name__, str(e),
-				method.__module__, method.__name__,
-				describe_fd(sys.stderr)), timeout=5000)
+			try:
+				notify("i3companion: %s: %s in %s.%s(). Refer to %s for backtrace" %
+				       (e.__class__.__name__, str(e),
+					method.__module__, method.__name__,
+					describe_fd(sys.stderr)), timeout=5000)
+			except Exception, e:
+				print>>sys.stderr, 'i3companion: Additional error while reporting error:'
+				traceback.print_exc()
 
 	def poll(self, timeout=-1, maxevents=-1):
 		while True:

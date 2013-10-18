@@ -1,13 +1,31 @@
 #!/usr/bin/env python
 
+# TODO: Throw away threading and integrate into epoll event loop
+
 import dbus
 import dbus.service
 import threading
 
+_system_bus = None
 _session_bus = None
 _main_loop = None
 _bus_loop = None
 _thread = None
+
+_system_bus_lock = threading.Lock()
+def get_system_bus(start_thread=True):
+	global _system_bus
+
+	# TODO: Check if still connected
+	if _system_bus is not None:
+		return _system_bus
+	with _system_bus_lock:
+		if _system_bus is None:
+			(main_loop, bus_loop) = get_main_loop()
+			_system_bus = dbus.SystemBus(mainloop = bus_loop)
+		if start_thread:
+			start_main_loop()
+		return _system_bus
 
 _session_bus_lock = threading.Lock()
 def get_session_bus(start_thread=True):
@@ -69,13 +87,18 @@ def start_main_loop():
 		_thread.start()
 
 def unload():
-	global _main_loop, _session_bus, _thread
+	global _main_loop, _system_bus, _session_bus, _thread
 
 	if _main_loop is not None:
 		with _main_loop_lock:
 			if _main_loop is not None:
 				_main_loop.quit()
 			_main_loop = None
+	if _system_bus is not None:
+		with _system_bus_lock:
+			if _system_bus is not None:
+				_system_bus.close()
+			_system_bus = None
 	if _session_bus is not None:
 		with _session_bus_lock:
 			if _session_bus is not None:

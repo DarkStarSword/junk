@@ -4,6 +4,7 @@ import mixer
 import music
 import trackpad
 import randr
+import upower
 
 def activate_key_bindings(keybinder):
 	"""
@@ -46,3 +47,4 @@ def activate_key_bindings(keybinder):
 	keybinder.bind_key(mod,   'b',                  music.next)
 
 	randr.register_xf86_keys(keybinder)
+	upower.register_xf86_keys(keybinder)

@@ -5,6 +5,7 @@ import music
 import trackpad
 import randr
 import upower
+import consolekit
 
 def activate_key_bindings(keybinder):
 	"""
@@ -48,3 +49,4 @@ def activate_key_bindings(keybinder):
 
 	randr.register_xf86_keys(keybinder)
 	upower.register_xf86_keys(keybinder)
+	consolekit.register_xf86_keys(keybinder)

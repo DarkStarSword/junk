@@ -5,9 +5,16 @@ from pluginmanager import notify
 import wmiidbus # FIXME: Integrate into epoll event loop
 import dbus
 
-# For suspend / hibernate:
-# upower_proxy = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower')
-# upower = dbus.Interface(upower_proxy, 'org.freedesktop.UPower')
+def get_upower():
+	bus = wmiidbus.get_system_bus()
+	upower_proxy = bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower')
+	return dbus.Interface(upower_proxy, 'org.freedesktop.UPower')
+
+def suspend():
+	get_upower().Suspend()
+
+def hibernate():
+	get_upower().Hibernate()
 
 def adj_kbd_backlight(delta):
 	bus = wmiidbus.get_system_bus()

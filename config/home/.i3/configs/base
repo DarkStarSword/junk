@@ -215,6 +215,21 @@ new_window        normal 1
 new_float         normal 1
 # hide_edge_borders both
 
+# For a long time I've liked using focus follows mouse, but when using many
+# laptops it is too easy to bump the trackpad while typing - if the cursor is
+# over the wrong window when this happens swearing is sure to follow. It also
+# doesn't help that i3 warps the mouse to the middle of a screen when switching
+# screens on a multi-monitor setup, because if the screen has been split evenly
+# then bumping the mouse can easily highlight the wrong window.
+#
+# I've been trying out disabling focus follows mouse on my ThinkPad, and
+# overall I'm pretty happy with it's behaviour - scrolling the mousewheel still
+# highlights the window under cursor, so it's still roughly a million times
+# better than the behaviour of certain other operating systems. There are still
+# a few situations where I would like it on, but they are rare and I've decided
+# the benefits of turining it off outweigh them.
+focus_follows_mouse no
+
 # TODO: spawn xautolock
 bindsym XF86ScreenSaver $lock
 bindsym XF86Sleep       $lock

@@ -84,7 +84,12 @@ def fake_gnome_settings_daemon():
 	fake = FakeGnomeSettings(bus)
 
 def register_xf86_keys(keybinder):
-	fake_gnome_settings_daemon()
+	try:
+		fake_gnome_settings_daemon()
+	except Exception, e:
+		notify('%s trying to start fake "gnome-settings-daemon": %s.  Power button will not be caught!' % \
+				(e.__class__.__name__, str(e)), timeout = 5000)
+		return
 	keybinder.bind_key(0, 'XF86_PowerOff', power_button)
 
 if __name__ == '__main__':

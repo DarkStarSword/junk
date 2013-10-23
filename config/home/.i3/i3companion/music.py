@@ -94,7 +94,7 @@ def prev(): return command('Previous Track')
 def play(): return command('Play')
 def pause(): return command('Play/Pause')
 def stop(): return command('Stop')
-def next(): return command('Next')
+def next(): return command('Next Track')
 
 @notify_exception
 def music_status(self):

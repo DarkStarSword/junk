@@ -5,3 +5,6 @@ script=~/.i3/local/thinkpad/"$display".sh
 if [ -x "$script" ]; then
 	"$script"
 fi
+
+feh --bg-fill ~/desktop.jpg
+# feh --bg-center ~/desktop.jpg

@@ -184,6 +184,7 @@ set $bluetooth_manager exec exec blueman-manager
 set $chat              exec exec i3-sensible-terminal -bg Black -fg White -e finch
 set $irc               exec exec i3-sensible-terminal -e irssi
 set $python            exec exec i3-sensible-terminal -bg Black -fg White -e ipython
+set $python3           exec exec i3-sensible-terminal -bg Black -fg White -e ipython3
 set $calc              exec exec i3-sensible-terminal -e calc
 set $calendar          exec exec i3-sensible-terminal -e wyrd
 set $voip              exec exec mumble
@@ -259,6 +260,7 @@ bindsym $mod+w         $browser
 bindsym $mod+e         $email
 bindsym $mod+r         $rss
 bindsym $mod+y         $python
+bindsym $mod+Shift+y   $python3
 bindsym $mod+u         $music1
 bindsym $mod+i         $irc
 bindsym $mod+o         $music2

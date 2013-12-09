@@ -36,6 +36,8 @@ def activate_key_bindings(keybinder):
 
 	keybinder.bind_key(0,     'XF86_TouchpadToggle', trackpad.toggle_trackpad)
 	keybinder.bind_key(Shift, 'XF86_TouchpadToggle', trackpad.toggle_trackpoint)
+	keybinder.bind_key(mod,   'F8', trackpad.toggle_trackpad)
+	keybinder.bind_key(mod|Shift,'F8', trackpad.toggle_trackpoint)
 	keybinder.bind_key(0,     'XF86_AudioPrev',      music.prev)
 	keybinder.bind_key(0,     'XF86_AudioPlay',      music.pause)
 	keybinder.bind_key(0,     'XF86_AudioPause',     music.pause)

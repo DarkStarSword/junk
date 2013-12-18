@@ -156,7 +156,7 @@ def find_extra_files(game_path, known_filenames, indent, opts):
 					try:
 						os.rmdir(path)
 						extra = ' (REMOVED)\n'
-					except OSError, e:
+					except OSError as e:
 						extra = ' %s\n' % str(e)
 				else:
 					dest = os.path.join(dest_root, os.path.relpath(path, game_path))
@@ -164,7 +164,7 @@ def find_extra_files(game_path, known_filenames, indent, opts):
 						mkdir_recursive(os.path.dirname(dest))
 						os.rename(path, dest)
 						extra = '\n%s  --> %s\n' % (indent, os.path.relpath(dest))
-					except OSError, e:
+					except OSError as e:
 						extra = ' %s\n' % str(e)
 			elif opts.delete:
 				extra = ' (DELETED)\n'

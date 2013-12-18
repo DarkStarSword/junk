@@ -22,7 +22,7 @@ def is_running():
 	try:
 		info = cmus_info()
 		return True
-	except subprocess.CalledProcessError, e:
+	except subprocess.CalledProcessError as e:
 		return False
 	assert(False)
 

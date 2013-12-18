@@ -30,7 +30,7 @@ def notify_exception(arg):
 		@functools.wraps(f)
 		def wrap2(*args, **kwargs):
 			try: return f(*args, **kwargs)
-			except Exception, e:
+			except Exception as e:
 				if hasattr(e, 'notified') and e.notified == True:
 					raise # Already notified, just pass back up the stack
 				if comment:

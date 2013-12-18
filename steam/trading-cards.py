@@ -219,7 +219,7 @@ def classify_steam_apps(apps):
 			for genre in data['genres']:
 				if str(genre['description']) == 'Free to Play':
 					apps[appID]['type'] = 'F2P'
-		except KeyError, e:
+		except KeyError as e:
 			print>>sys.stderr, 'Skipping %s (%s) - appdetails has no %s' % (appID, apps[appID]['title'], str(e))
 			apps[int(appID)]['type'] = '?'
 			continue

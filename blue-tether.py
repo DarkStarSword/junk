@@ -166,7 +166,7 @@ class BluezNetMonitor(object):
       self.Interface = self.dev_network.Connect('NAP') # 'GN' / 'NAP' ?
       print '%s created' % self.Interface
       return 0
-    except dbus.exceptions.DBusException, e:
+    except dbus.exceptions.DBusException as e:
       print 'Error Connecting: %s' % e
       if self.reconnect is None:
         raise
@@ -204,7 +204,7 @@ def main():
   glib.io_add_watch(sys.stdin, glib.IO_IN, input_callback)
   try:
     bluez_net_monitor = BluezNetMonitor(bus, bd_path, main_loop, opts.reconnect)
-  except dbus.exceptions.DBusException, e:
+  except dbus.exceptions.DBusException as e:
     return 1
 
   print 'Press enter to close connection'

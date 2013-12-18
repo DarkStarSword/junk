@@ -26,7 +26,7 @@ class EventLoop(object):
 		(method, args, kwargs) = self._fds[fd]
 		try:
 			method(*args, **kwargs)
-		except Exception, e:
+		except Exception as e:
 			import sys, traceback
 			traceback.print_exc()
 			try:
@@ -34,7 +34,7 @@ class EventLoop(object):
 				       (e.__class__.__name__, str(e),
 					method.__module__, method.__name__,
 					describe_fd(sys.stderr)), timeout=5000)
-			except Exception, e:
+			except Exception as e:
 				print>>sys.stderr, 'i3companion: Additional error while reporting error:'
 				traceback.print_exc()
 
@@ -42,7 +42,7 @@ class EventLoop(object):
 		while True:
 			try:
 				return self._epoll.poll(timeout, maxevents)
-			except IOError, e:
+			except IOError as e:
 				if e.args[0] == 4: # Interrupted system call
 					continue
 				raise

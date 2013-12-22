@@ -1,6 +1,7 @@
 from pluginmanager import notify, notify_exception
 
 mixer_delta = 2
+pulse_adjust_factor = 0.01
 mixers = [] # Set this in local.py to adjust non-default or multiple mixers
 
 def def_mixer():
@@ -35,7 +36,7 @@ def sync_mixers(vol = None, mute = None):
 			ret += [name]
 	return ret
 
-def vol(adjust):
+def alsa_vol(adjust):
 	# FIXME: This is not the same scale as used by alsamixer
 	m = def_mixer()
 	nv = ov = m.getvolume()[0]
@@ -58,6 +59,19 @@ def vol(adjust):
 
 	names = ', '.join([ m.mixer() ] + sync_mixers(vol=nv))
 	notify("%s: %d%%%s" % (names, nv, mute), key='mixer')
+
+def pulse_vol(adjust):
+	import pulse
+	v = pulse.PulseAppVolume()
+	(vol, mute) = v(None, adjust * pulse_adjust_factor)
+	mute = mute and ' [MUTE]' or ''
+	notify("Mixer: %d%%%s" % (vol / pulse_adjust_factor, mute), key='mixer')
+
+def vol(adjust):
+	try:
+		pulse_vol(adjust)
+	except:
+		alsa_vol(adjust)
 
 def vol_up(): return vol(mixer_delta)
 def vol_down(): return vol(-mixer_delta)
@@ -84,7 +98,7 @@ def intel_vol_up(): return intel_vol('up')
 def intel_vol_down(): return intel_vol('down')
 def intel_vol_mute(): return intel_vol('mute')
 
-def vol_mute():
+def alsa_vol_mute():
 	m = def_mixer()
 	v = m.getmute()[0]
 	v = not v
@@ -92,3 +106,15 @@ def vol_mute():
 
 	names = ', '.join([ m.mixer() ] + sync_mixers(mute=v))
 	notify("%s: %s" % (names, 'MUTE' if m.getmute()[0] else 'on'), key='mixer')
+
+def pulse_vol_mute():
+	import pulse
+	v = pulse.PulseAppVolume()
+	(vol, mute) = v(None, toggle_mute=True)
+        notify('Mixer: MUTE' if mute else 'Mixer: on', key='mixer')
+
+def vol_mute():
+	try:
+		pulse_vol_mute()
+	except:
+		alsa_vol_mute()

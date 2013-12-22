@@ -21,7 +21,7 @@ def is_running():
 	try:
 		info = mocp_info()
 		return True
-	except subprocess.CalledProcessError as e:
+	except (OSError, subprocess.CalledProcessError) as e:
 		return False
 	assert(False)
 

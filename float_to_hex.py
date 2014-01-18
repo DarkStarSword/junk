@@ -18,13 +18,13 @@ def float_to_hex(val):
 	return '0x%.8x' % struct.unpack('I', struct.pack('f', val))[0]
 
 def double_to_hex(val):
-	return '0x%.16x' % struct.unpack('L', struct.pack('d', val))[0]
+	return '0x%.16x' % struct.unpack('Q', struct.pack('d', val))[0]
 
 def _hex_to_float(val):
 	return struct.unpack('f', struct.pack('I', val))[0]
 
 def _hex_to_double(val):
-	return struct.unpack('d', struct.pack('L', val))[0]
+	return struct.unpack('d', struct.pack('Q', val))[0]
 
 def hex_to_float(val):
 	return _hex_to_float(int(val, 16))

@@ -225,7 +225,10 @@ def get_mounted_depots(app_state):
 def check_acf(acf_filename, opts):
 	app_state = acf.parse_acf(acf_filename)['AppState']
 
-	app_id = app_state['appID']
+	if 'appID' in app_state:
+		app_id = app_state['appID']
+	else:
+		app_id = app_state['appid']
 	name = app_state['UserConfig']['name']
 	ui._print('%s (%s):' % (name, app_id))
 

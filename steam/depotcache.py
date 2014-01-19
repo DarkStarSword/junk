@@ -169,7 +169,7 @@ def dump_remaining_data(f):
 		print>>sys.stderr
 		return
 
-def _decode_depotcache(filename, print_unknown = False):
+def decode_depotcache(filename, print_unknown = False):
 	with file(filename, 'r') as f:
 		pr_unexpected(f.read(4), 'D017F671', "Unexpected magic value: ")
 		pr_unknown(f.read(3), print_unknown)
@@ -186,14 +186,10 @@ def _decode_depotcache(filename, print_unknown = False):
 			else:
 				print 'WARNING: UNKNOWN TYPE 0x%.2X' % byte
 
-def decode_depotcache(filename, print_unknown = False):
-	for (filename, h) in _decode_depotcache(filename, print_unknown):
-		yield filename
-
 def main():
 	for filename in sys.argv[1:]:
 		print>>sys.stderr, 'Decoding %s...' % filename
-		for entry in _decode_depotcache(filename, True):
+		for entry in decode_depotcache(filename, True):
 			print '%s\n\t\t%s' % entry
 		print>>sys.stderr
 

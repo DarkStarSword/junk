@@ -7,6 +7,9 @@ import depotcache, acf
 
 from ui import ui_tty as ui
 
+import hashlib
+import sys
+
 g_indent = '  '
 colours = {
 	False: 'back_red black',
@@ -49,16 +52,81 @@ class FilenameSet(set):
 		if dirname != '':
 			self.add(dirname)
 
+def verify_file_hash(filename, depot_hash, indent, opts):
+	s = hashlib.sha1()
+	f = open(filename, 'rb')
+
+	bad_found = False
+
+	off = 0
+	for chunk in sorted(depot_hash):
+		assert(chunk.off == off)
+		buf = f.read(chunk.len)
+		off += chunk.len
+		s.update(buf)
+
+		sha = hashlib.sha1(buf).hexdigest()
+		if sha != chunk.sha:
+			if opts.verify == 1:
+				return False
+
+			if not bad_found:
+				ui._cprint('red', ' (BAD CHECKSUM)')
+				bad_found = True
+			ui._print(indent, end='')
+			ui._cprint('red', '%.10i:%.10i found %s expected %s' % \
+					(chunk.off, chunk.off+chunk.len, sha, chunk.sha))
+
+	assert(off == depot_hash.filesize)
+
+	if bad_found:
+		ui._print(indent, end='')
+
+	eof_garbage = False
+	while True:
+		buf = f.read(1024*1024)
+		if buf == '':
+			break
+		if not eof_garbage:
+			ui._cprint('red', ' (Garbage found at end of file!)', end='')
+			eof_garbage = True
+		s.update(buf)
+
+	if bad_found:
+		return False
+	return s.hexdigest() == depot_hash.sha
+
 def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
+	def verify_hash():
+		if opts.verify and not verify_file_hash(filename, depot_hash, indent+g_indent, opts):
+			ui._cprint('red', ' (BAD CHECKSUM)', end='')
+	def check_filesize():
+		if depot_hash.filetype == 'directory':
+			return True
+		return filesize == depot_hash.filesize
+	def warn_filesize():
+		if not check_filesize():
+			ui._cprint('red', ' (Filesize != %i, %+i)' % \
+					(depot_hash.filesize, filesize - depot_hash.filesize))
+
 	ok = True
 	filenames = FilenameSet()
-	for filename in depotcache.decode_depotcache(manifest_path):
-		filename = os.path.join(game_path, filename.replace('\\', os.path.sep))
-		(found, filename, pretty) = insensitive_path(filename, opts)
+	for (orig_filename, depot_hash) in depotcache.decode_depotcache(manifest_path):
+		filename = os.path.join(game_path, orig_filename.replace('\\', os.path.sep))
+		(found, correct, filename, pretty) = insensitive_path(filename, opts)
 		filenames.add(filename)
-		if pretty is not None:
+
+		if opts.file_filter is not None and orig_filename not in opts.file_filter:
+			continue
+
+		filesize = os.stat(filename).st_size
+
+		if not correct:
 			ui._print(indent, end='')
 			ui._print(pretty, end='')
+			warn_filesize()
+			sys.stdout.flush()
+			verify_hash()
 			if not found:
 				ok = False
 				ui._print(' (FILE MISSING)')
@@ -68,8 +136,12 @@ def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 					ui._print('rerun with -r to fix)')
 				else:
 					ui._print('renamed)')
-		elif opts.verbose > 2:
-			ui._print(indent + filename)
+		elif opts.verbose > 2 or opts.verify or not check_filesize():
+			ui._print(indent + filename, end='')
+			warn_filesize()
+			sys.stdout.flush()
+			verify_hash()
+			ui._print()
 	return (ok, filenames)
 
 def check_depots_exist(mounted_depots, managed_depots, library_root, indent, opts):
@@ -95,6 +167,10 @@ def check_all_depot_files_exist(mounted_depots, library_root, game_path, indent,
 	filenames = set()
 	for depot in mounted_depots:
 		manifest = manifest_filename(depot, mounted_depots[depot])
+		if opts.depot_filter is not None and \
+				depot not in opts.depot_filter and \
+				manifest not in opts.depot_filter:
+			continue
 		path = manifest_path(library_root, manifest)
 		if opts.verbose:
 			ui._print('%s%s' % (indent, manifest))
@@ -115,7 +191,7 @@ def mkdir_recursive(path):
 
 def insensitive_path(path, opts):
 	if os.path.exists(path):
-		return (True, path, None)
+		return (True, True, path, path)
 
 	basename = os.path.basename(path)
 	dirname = pretty_dirname = os.path.dirname(path)
@@ -123,7 +199,7 @@ def insensitive_path(path, opts):
 	if not os.path.isdir(dirname):
 		(found, dirname, pretty_dirname) = insensitive_path(dirname, opts)
 		if not found:
-			return (False, dirname, os.path.join(pretty_dirname, basename))
+			return (False, False, dirname, os.path.join(pretty_dirname, basename))
 
 	pretty_basename = ''
 	for entry in os.listdir(dirname):
@@ -135,9 +211,9 @@ def insensitive_path(path, opts):
 					pretty_basename += entry[i]
 			if opts.rename:
 				os.rename(os.path.join(dirname, entry), os.path.join(dirname, basename))
-				return (True, os.path.join(dirname, basename), os.path.join(pretty_dirname, pretty_basename))
-			return (True, os.path.join(dirname, entry), os.path.join(pretty_dirname, pretty_basename))
-	return (False, path, ui._ctext('back_red black', path))
+				return (True, False, os.path.join(dirname, basename), os.path.join(pretty_dirname, pretty_basename))
+			return (True, False, os.path.join(dirname, entry), os.path.join(pretty_dirname, pretty_basename))
+	return (False, False, path, ui._ctext('back_red black', path))
 
 def find_extra_files(game_path, known_filenames, indent, opts):
 	known_filenames_l = set(map(str.lower, known_filenames))
@@ -190,7 +266,7 @@ def find_game_path(app_state, library_root, acf_filename, opts):
 		# FIXME: This may be in the Windows format which will probably break this!
 		install_dir = os.path.basename(app_state['UserConfig']['appinstalldir'])
 
-	(found, game_path, pretty) = insensitive_path(os.path.join(library_root, 'SteamApps/common/%s' %
+	(found, correct, game_path, pretty) = insensitive_path(os.path.join(library_root, 'SteamApps/common/%s' %
 		install_dir), opts)
 	if found:
 		# TODO: Warn if a second directory exists with the same name
@@ -201,7 +277,7 @@ def find_game_path(app_state, library_root, acf_filename, opts):
 		ui._cprint(colours[False], 'Missing game directory', end=': ')
 		ui._print(pretty)
 		return None
-	if pretty is not None:
+	if not correct:
 		ui._print(g_indent, end='')
 		ui._cprint('back_yellow black', 'WARNING: Case Mismatch', end='')
 		if not opts.rename:
@@ -279,6 +355,12 @@ def main():
 	parser.add_option('-e', '--extra', '--extraneous', action='store_true',
 			help='List any files in the game directory that are not tracked by any manifest files. Extraneous files are highlighted in ' + \
 				ui._ctext('back_blue yellow', 'blue'))
+	parser.add_option('--verify', action='count',
+			help='Validate files integrity (Note: may show false positives if a file is in multiple depots). Specify twice to identify corrupt chunks.')
+	parser.add_option('--file-filter', action='append',
+			help='Specify file to check. Useful with --verify on large games when the bad files are already known. Can be specified multiple times.')
+	parser.add_option('--depot-filter', action='append',
+			help='Specify which mounted depots to process. Can be specified multiple times.')
 	# '-d': Interractively delete (implies -e) files that not listed in the manifest file
 	parser.add_option('-D', '--delete', action='store_true',
 			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. Also beware that a few games (e.g. Borderlands) still have their DLC managed by the legacy NCF format, which this script is not aware of and could therefore delete required files. BE CAREFUL WITH THIS OPTION!')
@@ -290,6 +372,10 @@ def main():
 	#             Also, when I can do this it might be an idea for some of the above rename/delete options to imply this.
 	(opts, args) = parser.parse_args()
 	# TODO: If directory specified, interactively ask which game to check by name (maybe change default to do this to)
+
+	if opts.file_filter is not None:
+		opts.file_filter = [ x.replace('/', '\\') for x in opts.file_filter ]
+
 	if len(args) == 0:
 		args = glob.glob(os.path.expanduser('~/.steam/root/SteamApps/appmanifest_*.acf'))
 	for filename in args:

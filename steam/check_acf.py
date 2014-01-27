@@ -53,6 +53,9 @@ class FilenameSet(set):
 			self.add(dirname)
 
 def verify_file_hash(filename, depot_hash, indent, opts):
+	if depot_hash.filetype == 'directory':
+		return os.path.isdir(filename)
+
 	s = hashlib.sha1()
 	f = open(filename, 'rb')
 

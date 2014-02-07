@@ -56,7 +56,8 @@ class XKeyBinder(object):
 
 	def __del__(self):
 		self.loop.unregister(self.xcb_conn.get_file_descriptor())
-		self.xcb_conn.close()
+		self.xcb_conn.disconnect()
+                self.xlib_conn.close()
 
 	def bind_key(self, modifiers, key, func, args=(), kwargs={}):
 		keycodes = [(key, modifiers)]

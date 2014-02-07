@@ -79,6 +79,7 @@ def adj_backlight(delta):
 				break
 			except xcb.xproto.BadName:
 				continue
+	conn.disconnect()
 
 def notify_brightness(input):
 	for (name, brightness) in input:

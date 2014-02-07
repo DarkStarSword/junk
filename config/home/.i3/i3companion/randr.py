@@ -38,16 +38,29 @@ def adj_backlight(delta):
 		for (backlight_atom, backlight_query, backlight_prop) in backlight_cookies:
 			try:
 				(bmin, bmax) = list(backlight_query.reply().validValues)
-				val = backlight_prop.reply().data[0]
+				val = backlight_prop.reply().data
+
+                                # This seems wrong - why am I getting an array
+                                # of four bytes instead of python-xcb giving me
+                                # an Integer?
+                                #
+                                # XXX: I'm assuming this is little-endian,
+                                # given that X is supposed to be a network
+                                # protocol so this has to be well defined, and
+                                # the values I'm seeing are little-endian
+                                val = struct.unpack('<I', struct.pack('4B', *val))[0]
+
+                                delta = delta * (bmax - bmin) / 100
 				new = max(bmin, min(bmax, val + delta))
 				if new != val:
 					val = new
+                                        valb = struct.unpack('4B', struct.pack('<I', new))
 					randr.ChangeOutputProperty(output,
 							backlight_atom,
 							xcb.xproto.Atom.INTEGER,
 							32,
 							xcb.xproto.PropMode.Replace,
-							1, [val])
+							1, valb)
 				yield(name, 100 * (val - bmin) / bmax)
 				conn.flush()
 				break
@@ -59,10 +72,10 @@ def notify_brightness(input):
 		notify('%s: %i%%' % (name, brightness), key='backlight')
 
 def raise_brightness():
-	return notify_brightness(adj_backlight(+1))
+	return notify_brightness(adj_backlight(+5))
 
 def lower_brightness():
-	return notify_brightness(adj_backlight(-1))
+	return notify_brightness(adj_backlight(-5))
 
 def register_xf86_keys(keybinder):
 	keybinder.bind_key(0, 'XF86_MonBrightnessUp', raise_brightness)

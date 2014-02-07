@@ -49,6 +49,9 @@ def activate_key_bindings(keybinder):
 	keybinder.bind_key(mod,   'v',                  music.stop)
 	keybinder.bind_key(mod,   'b',                  music.next)
 
+	keybinder.bind_key(mod,   'Up',                 randr.raise_brightness)
+	keybinder.bind_key(mod,   'Down',               randr.lower_brightness)
+
 	randr.register_xf86_keys(keybinder)
 	upower.register_xf86_keys(keybinder)
 	consolekit.register_xf86_keys(keybinder)

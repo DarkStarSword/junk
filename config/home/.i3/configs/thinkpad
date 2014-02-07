@@ -10,13 +10,13 @@ bar {
 
 workspace 6 output HDMI3
 
-# When using a projector, avoid accidentally changing the external display
-workspace 1 output LVDS1
-workspace 2 output LVDS1
-workspace 3 output LVDS1
-workspace 4 output LVDS1
-workspace 5 output LVDS1
-workspace 7 output LVDS1
-workspace 8 output LVDS1
-workspace 9 output LVDS1
-workspace 10 output LVDS1
+# # When using a projector, avoid accidentally changing the external display
+# workspace 1 output LVDS1
+# workspace 2 output LVDS1
+# workspace 3 output LVDS1
+# workspace 4 output LVDS1
+# workspace 5 output LVDS1
+# workspace 7 output LVDS1
+# workspace 8 output LVDS1
+# workspace 9 output LVDS1
+# workspace 10 output LVDS1

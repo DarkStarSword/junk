@@ -3,19 +3,32 @@
 import xcb.xproto
 import xcb.randr
 import struct
+import time
 
 from pluginmanager import notify
+
+# XXX: Can I get notified of this being updated instead of timing it out?
+_resources = None
+_resources_timestamp = None
+def get_resources(conn, randr):
+	global _resources
+	global _resources_timestamp
+	t = time.time()
+	if _resources is None or _resources_timestamp > t or t - _resources_timestamp > 5:
+		root = conn.get_setup().roots[0].root
+		_resources = randr.GetScreenResources(root).reply()
+		_resources_timestamp = t
+	return _resources
 
 def adj_backlight(delta):
 	# FIXME: Refactor this function - it got nasty!
 	conn = xcb.connect()
-	root = conn.get_setup().roots[0].root
 	randr = conn(xcb.randr.key)
 	# TODO: Check randr.QueryVersion
 	# TODO: Don't create if it atom doesn't exist & handle
 	backlight_atoms = [ conn.core.InternAtom(False, len(name), name).reply().atom \
 				for name in ('Backlight', 'BACKLIGHT') ]
-	resources = randr.GetScreenResources(root).reply()
+	resources = get_resources(conn, randr)
 	cookies = []
 
 	for output in resources.outputs:

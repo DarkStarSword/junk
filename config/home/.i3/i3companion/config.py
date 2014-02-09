@@ -51,6 +51,8 @@ def activate_key_bindings(keybinder):
 
 	keybinder.bind_key(mod,   'Up',                 randr.raise_brightness)
 	keybinder.bind_key(mod,   'Down',               randr.lower_brightness)
+	keybinder.bind_key(mod|Shift,'Up',              upower.raise_kbd_backlight)
+	keybinder.bind_key(mod|Shift,'Down',            upower.lower_kbd_backlight)
 
 	randr.register_xf86_keys(keybinder)
 	upower.register_xf86_keys(keybinder)

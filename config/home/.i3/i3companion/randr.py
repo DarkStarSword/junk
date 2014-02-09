@@ -3,6 +3,7 @@
 import xcb.xproto
 import xcb.randr
 import struct
+import math
 import time
 
 from pluginmanager import notify
@@ -63,7 +64,8 @@ def adj_backlight(delta):
                                 # the values I'm seeing are little-endian
                                 val = struct.unpack('<I', struct.pack('4B', *val))[0]
 
-                                delta = delta * (bmax - bmin) / 100
+                                if delta:
+                                    delta = (delta * (bmax - bmin) / 100) or math.copysign(1, delta)
 				new = max(bmin, min(bmax, val + delta))
 				if new != val:
 					val = new

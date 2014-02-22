@@ -122,12 +122,14 @@ def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 		if opts.file_filter is not None and orig_filename not in opts.file_filter:
 			continue
 
-		filesize = os.stat(filename).st_size
+		if found:
+			filesize = os.stat(filename).st_size
 
 		if not correct:
 			ui._print(indent, end='')
 			ui._print(pretty, end='')
-			warn_filesize()
+			if found:
+				warn_filesize()
 			sys.stdout.flush()
 			verify_hash()
 			if not found:
@@ -200,7 +202,7 @@ def insensitive_path(path, opts):
 	dirname = pretty_dirname = os.path.dirname(path)
 
 	if not os.path.isdir(dirname):
-		(found, dirname, pretty_dirname) = insensitive_path(dirname, opts)
+		(found, correct, dirname, pretty_dirname) = insensitive_path(dirname, opts)
 		if not found:
 			return (False, False, dirname, os.path.join(pretty_dirname, basename))
 

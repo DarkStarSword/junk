@@ -268,8 +268,13 @@ def find_game_path(app_state, library_root, acf_filename, opts):
 	install_dir = app_state['installdir']
 	if install_dir == '':
 		ui._cprint('yellow', g_indent + 'WARNING: Blank installdir in %s, trying UserConfig.appinstalldir...' % acf_filename)
-		# FIXME: This may be in the Windows format which will probably break this!
 		install_dir = os.path.basename(app_state['UserConfig']['appinstalldir'])
+	# Occasionally the install_dir is the full path in the Windows format.
+	# This seems to happen sometimes when moving games from one install to
+	# another. AFAICT the full path is never used - the acf file must be in
+	# the same steam library as the install regardless, so discard the rest
+	# of the path.
+	install_dir = install_dir.split('\\')[-1]
 
 	(found, correct, game_path, pretty) = insensitive_path(os.path.join(library_root, 'SteamApps/common/%s' %
 		install_dir), opts)

@@ -39,6 +39,69 @@ def manifest_filename(depot, timestamp):
 def manifest_path(library_root, filename):
 	return os.path.join(library_root, 'depotcache/%s' % filename)
 
+def find_library_root(acf_filename):
+	return os.path.relpath(os.path.realpath(os.path.join(
+		os.path.curdir, os.path.dirname(acf_filename), '..')))
+
+def find_steam_path_from_registry(opts, reg):
+	if opts.verbose:
+		ui._print("Looking for steam path from registry...")
+	key = reg.OpenKey(reg.HKEY_CURRENT_USER,
+			'Software\\Valve\\Steam', 0,
+			reg.KEY_READ | reg.KEY_WOW64_32KEY)
+	return reg.QueryValueEx(key, 'SteamPath')[0]
+
+def cygwin_path(path):
+	import subprocess
+	return subprocess.check_output(['cygpath.exe', '-u', path]).strip()
+
+def guess_steam_path_win(opts, translate = lambda x: x):
+	for path in [
+			r'c:\program files (x86)\steam',
+			r'c:\program files\steam',
+			r'c:\steam'
+			]:
+		if opts.verbose:
+			ui._print("Searching '%s'..." % translate(path))
+		if os.path.isdir(translate(path)):
+			return path
+	ui._cprint('red', 'Unable to find Steam root - rerun with --steam-root=')
+	sys.exit(1)
+
+def find_steam_root(opts, acf_filename = None):
+	if acf_filename is not None:
+		# If this library has a depotcache, assume it is also the steam root
+		# XXX: This could be tricked if someone has created or copied a
+		# depotcache folder into the library, or if several steam
+		# installations are sharing libraries. In these cases the user
+		# will just have to specify --steam-root= to override it.
+		library_root = find_library_root(acf_filename)
+		if os.path.isdir(os.path.join(library_root, 'depotcache')):
+			return library_root
+	path = None
+	if sys.platform.startswith('linux'):
+		path = os.path.expanduser('~/.steam/root')
+	elif sys.platform == 'cygwin':
+		try:
+			import cygwinreg
+		except ImportError:
+			if opts.verbose:
+				ui._print('python-cygwinreg not installed, searching common Steam paths...')
+		else:
+			if not hasattr(cygwinreg, 'KEY_WOW64_32KEY'):
+				cygwinreg.KEY_WOW64_32KEY = 512
+			path = find_steam_path_from_registry(opts, cygwinreg)
+		path = path or guess_steam_path_win(opts, cygwin_path)
+	elif sys.platform == 'win32':
+		import _winreg
+		path = find_steam_path_from_registry(opts, _winreg)
+		path = path or guess_steam_path_win(opts)
+	if path:
+		return path
+	ui._cprint('red', 'Unable to find Steam root - rerun with --steam-root=')
+	sys.exit(1)
+
+
 class FilenameSet(set):
 	# It may be more efficient to convert the paths to a tree structure,
 	# but for the moment this is easier.
@@ -318,8 +381,7 @@ def check_acf(acf_filename, opts):
 	name = app_state['UserConfig']['name']
 	ui._print('%s (%s):' % (name, app_id))
 
-	library_root = os.path.relpath(os.path.realpath(os.path.join(
-		os.path.curdir, os.path.dirname(acf_filename), '..')))
+	library_root = find_library_root(acf_filename)
 
 	game_path = find_game_path(app_state, library_root, acf_filename, opts)
 	if game_path is None: return
@@ -344,10 +406,10 @@ def check_acf(acf_filename, opts):
 			ui._cprint('back_yellow black', 'UNINSTALLED!')
 		return
 
-	ok = check_depots_exist(mounted_depots, managed_depots, library_root, g_indent*2, opts)
+	ok = check_depots_exist(mounted_depots, managed_depots, opts.steam_root, g_indent*2, opts)
 	if not ok: return
 
-	(ok, filenames) = check_all_depot_files_exist(mounted_depots, library_root, game_path, g_indent*2, opts)
+	(ok, filenames) = check_all_depot_files_exist(mounted_depots, opts.steam_root, game_path, g_indent*2, opts)
 	if opts.extra or opts.delete or opts.move:
 		if opts.verbose: # So they don't appear to be under a manifest heading
 			ui._print(g_indent*2 + 'Untracked files:')
@@ -377,6 +439,8 @@ def main():
 	parser.add_option('-M', '--move', action='store_true', help="Move any extraneous files to SteamApps/common/game~EXTRANEOUS (implies -e). rsync may be used to merge them back into the game directory later.")
 	parser.add_option('-U', '--uninstall', action='store_true',
 			help="Mark games with bad acf files (Currently that means 0 depotcaches mounted, but that definition may change in the future) as uninstalled. This WILL NOT DELETE THE GAME - it is intended to quickly remove bad acf files that may be interfering with launching or updating particular games. These games will need to be manually re-installed in Steam. (NOTE: Restart Steam afterwards)")
+	parser.add_option('--steam-root',
+			help="Specify where Steam is installed. This is usually detected automatically based on the acf path, but it may be necessary to specify it if working with games installed in an alternate steam library and this script can't find the game's manifest files.")
 	# TODO:
 	# '--verify': Mark game as needs verification on next launch (XXX: What option is that in the .acf? XXX: happens if Steam is running at the time?)
 	#             Also, when I can do this it might be an idea for some of the above rename/delete options to imply this.
@@ -387,7 +451,15 @@ def main():
 		opts.file_filter = [ x.replace('/', '\\') for x in opts.file_filter ]
 
 	if len(args) == 0:
-		args = glob.glob(os.path.expanduser('~/.steam/root/SteamApps/appmanifest_*.acf'))
+		if opts.steam_root is None:
+			opts.steam_root = find_steam_root(opts)
+		args = glob.glob(os.path.join(opts.steam_root, 'SteamApps/appmanifest_*.acf'))
+	elif opts.steam_root is None:
+		opts.steam_root = find_steam_root(opts, args[0])
+
+	if opts.verbose:
+		ui._print("Using Steam root: '%s'" % opts.steam_root)
+
 	for filename in args:
 		check_acf(filename, opts)
 		ui._print()

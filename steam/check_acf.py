@@ -90,7 +90,7 @@ def find_steam_root(opts, acf_filename = None):
 		else:
 			if not hasattr(cygwinreg, 'KEY_WOW64_32KEY'):
 				cygwinreg.KEY_WOW64_32KEY = 512
-			path = find_steam_path_from_registry(opts, cygwinreg)
+			path = cygwin_path(find_steam_path_from_registry(opts, cygwinreg))
 		path = path or guess_steam_path_win(opts, cygwin_path)
 	elif sys.platform == 'win32':
 		import _winreg

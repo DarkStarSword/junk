@@ -11,30 +11,6 @@ import wmiidbus
 import dbus
 
 vol_delta = 0.05
-ad_blacklist = [
-		# Spotify keeps playing Justin Beiber at me, which is not
-		# healthy for my sanity. It's like Rickrolling, only worse
-		#
-		# These can either be single strings for the artist name, or
-		# tuples of (artist, title) pairs
-		#
-		# TODO: Add other known ads as I come across them
-		('Spotify', 'Spotify'),
-		"McDonald's",                     # "Social Playlist By Macca's"
-		"CBA",                            # "Commbank Can"
-		"Commonwealth Bank of Australia", # "Commbank Can"
-		'Indies ANZ (InHouse)',           # 'Tiesto'
-		'EMI Music Australia (InHouse)',  # 'Blur', 'Ricki Lee'
-		'Sony Music Australia (InHouse)', # 'Top Of The Charts'
-		'Hyundai',                        # 'Hyundai i30'
-		'Red Rooster',                    # 'New Flatbreads - Davo'
-		'Microsoft',                      # 'Internet Explorer 9'
-		'Seek Learning',                  # 'Calling Compilations'
-		'Coca-Cola',                      # 'Music Moments'
-		'Hungry Jacks',
-		# Hmmm... What's the deal with the (InHouse) prefix here? I
-		# could pattern match on that...
-	]
 
 def unload():
 	music.unregister_music_backend(name)
@@ -79,13 +55,6 @@ def is_playing():
 	except dbus.DBusException:
 		return False
 
-def do_ad_blacklist(artist, title):
-	if artist in ad_blacklist or (artist, title) in ad_blacklist:
-		spotify_pulse_mute(True)
-		return ' (AD MUTED)'
-	spotify_pulse_mute(False)
-	return ''
-
 def _status():
 	(artist, title) = (None, None)
 	metadata = spotify_info()
@@ -101,7 +70,6 @@ def _status():
 	if 'xesam:title' in metadata and metadata['xesam:title']:
 		title = metadata['xesam:title']
 		tmp += '%s ' % title
-	tmp += do_ad_blacklist(artist, title)
 	return tmp
 	#return '%s[%s/%s]' % (tmp, status['position'], status['duration'])
 

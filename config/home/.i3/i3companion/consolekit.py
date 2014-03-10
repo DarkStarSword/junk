@@ -48,7 +48,7 @@ def power_button():
 	dmenu.stdin.write('\n'.join(zip(*power_button_actions)[0]))
 	dmenu.stdin.close()
 	dmenu.wait()
-	action = dmenu.stdout.read()
+	action = dmenu.stdout.read().strip()
 
 	d = dict(power_button_actions)
 	if action not in d:

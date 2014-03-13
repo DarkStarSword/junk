@@ -7,6 +7,7 @@ set background=dark
 set ignorecase
 set smartcase
 set autoindent
+set wildmode=longest,list,full
 filetype plugin indent on
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 set showmatch

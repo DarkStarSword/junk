@@ -26,3 +26,12 @@
 
 /* Mostly for irssi - see http://atsutane.de/blog/2013/05/14/irssi-screen-urxvt-the-urgency-hint/ */
 *.VT100.bellIsUrgent:	true
+
+
+/* Disable chromatic aberration AKA sub-pixel rendering in Firefox.
+ * If a font uses proper hinting (i.e. has been designed for screen use) it
+ * shouldn't be affected much/at all. If a font DOESN'T use proper hinting,
+ * than WTF is it being used for on a website anyway? In these cases all
+ * sub-pixel rendering does is turn them from a low-quality blurry font into
+ * a low-quality blurry RAINBOW COLOURED font. */
+Xft.rgba:		none

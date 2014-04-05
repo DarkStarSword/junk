@@ -50,8 +50,8 @@ mappings = {
 
 				('Button 1', 'key ctrl z'),
 				('Button 2', 'key alt'),
-				('Button 3', 'key ctrl'),
-				('Button 8', 'key +space'),
+				('Button 3', 'key shift'),
+				('Button 8', 'key ctrl'),
 
 				('Button 9',  'key PgUp'),
 				('Button 10', 'key PgDn'),

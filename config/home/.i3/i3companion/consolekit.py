@@ -29,6 +29,14 @@ def log_out():
 	subprocess.call(['i3-msg', 'exit'])
 	sys.exit(0)
 
+def switch_user():
+    # This is display manager specific
+    bus = wmiidbus.get_system_bus()
+    proxy = bus.get_object('org.gnome.DisplayManager', '/org/gnome/DisplayManager/LocalDisplayFactory')
+    iface = dbus.Interface(proxy, 'org.gnome.DisplayManager.LocalDisplayFactory')
+    iface.CreateTransientDisplay()
+    # TODO FIXME: Lock screen
+
 # Defined as list of tuples to preserve order, converted to dict when needed
 power_button_actions = [
 		('OOPS WRONG BUTTON!', lambda : None),
@@ -37,12 +45,13 @@ power_button_actions = [
 		('Shut Down', halt),
 		('Reboot', reboot),
 		('Log Out', log_out),
+		('Switch User', switch_user),
 	]
 
 def power_button():
 	# FIXME: Do this asynchronousely
 	import subprocess
-	dmenu = subprocess.Popen(['dmenu', '-l', '6', '-p',
+	dmenu = subprocess.Popen(['dmenu', '-l', str(len(power_button_actions)), '-p',
 		'Power Button Pressed! What would you like to do?'],
 		stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 	dmenu.stdin.write('\n'.join(zip(*power_button_actions)[0]))

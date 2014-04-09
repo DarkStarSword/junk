@@ -163,5 +163,5 @@ rsync -avP "$ENCFS_XML_SRC" "$ENCFS_XML_DEST"
 
 if [ -z "$REMOVE" ]; then
 	echo "Deleting old incrementals..."
-	rdiff-backup --remove-older-than "$REMOVE" "$DEST/"
+	rdiff-backup --remove-older-than "$REMOVE" --force "$DEST/"
 fi

@@ -2,6 +2,7 @@ Package: stlcam
 Version: 0.1
 Architecture: all
 Maintainer: <darkstarsword@gmail.com>
+Depends: gstreamer-tools
 Description: N9 Remote Camera
  Simultaneously records video to the internal storage while streaming it over a
  network to allow the use of a remote viewfinder. This is a very simple camera

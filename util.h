@@ -19,6 +19,8 @@ struct showstatus_state
 	u64 last_usec;
 	u64 last_pos;
 	u64 size;
+	u64 written;
+	u64 skipped;
 	double size_human;
 	char *size_units;
 };

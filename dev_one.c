@@ -54,6 +54,7 @@ u64 writedata(char *file, u64 start, int read_before_write)
 						return 0;
 					}
 					count = write(fp, buf, count);
+					stat.written += count;
 				}
 			} else
 				count = write(fp, buf, BLOCK_SIZE);

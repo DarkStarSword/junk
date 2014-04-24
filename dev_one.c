@@ -35,7 +35,7 @@ u64 writedata(char *file, u64 start, int read_before_write)
 	fp = open(file, mode | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos, size);
+	showstatus_init(&stat, pos, size, read_before_write);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {

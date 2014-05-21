@@ -9,7 +9,10 @@ libnotify_ids = {}
 def notify_libnotify(msg, key=None, timeout=1000, **kwargs):
 	import dbus, wmiidbus
 
-	session_bus = wmiidbus.get_session_bus(start_thread=False)
+        try:
+            session_bus = wmiidbus.get_session_bus(start_thread=False)
+        except:
+            return notify_stdout(msg, key, **kwargs)
 	proxy = session_bus.get_object('org.freedesktop.Notifications', '/org/freedesktop/Notifications')
 	notifications = dbus.Interface(proxy, 'org.freedesktop.Notifications')
 

@@ -31,8 +31,7 @@ _session_bus_lock = threading.Lock()
 def get_session_bus(start_thread=True):
 	global _session_bus
 
-	# TODO: Check if still connected
-	if _session_bus is not None:
+	if _session_bus is not None and _session_bus.get_is_connected():
 		return _session_bus
 	with _session_bus_lock:
 		if _session_bus is None:

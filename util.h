@@ -19,11 +19,12 @@ struct showstatus_state
 	u64 last_usec;
 	u64 last_pos;
 	u64 size;
+	u64 written;
 	double size_human;
 	char *size_units;
 };
 
-void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size);
+void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size, int read_before_write);
 void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg);
 
 unsigned int sd_erase_size(char *filename);

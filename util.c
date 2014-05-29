@@ -155,7 +155,7 @@ void showstatus(u64 pos)
 	printf("%#.8llx...\r", pos);
 }
 
-void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size)
+void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size, int read_before_write)
 {
 	struct timeval tv;
 
@@ -163,6 +163,10 @@ void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size)
 	stat->last_usec = tv.tv_sec*1000000 + tv.tv_usec;
 	stat->last_pos = pos;
 	stat->size = size;
+	if (read_before_write)
+		stat->written = 0;
+	else
+		stat->written = -1;
 	stat->size_human = human_size(size, &stat->size_units);
 }
 
@@ -173,6 +177,7 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 	double rate;
 	char *units, *pos_units;
 	double hpos = (human_size(pos, &pos_units));
+	char written_percent[32] = "";
 
 	gettimeofday(&tv, NULL);
 	usec = tv.tv_sec*1000000 + tv.tv_usec;
@@ -181,15 +186,19 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 	if (delta >= 1000000) {
 		bytes = pos - stat->last_pos;
 		rate = human_size((double)bytes / ((double)delta/1000000.0), &units);
+		if (stat->written != -1) {
+			snprintf(written_percent, 32, ", %.2f%% erased", (double)stat->written / bytes * 100.0);
+			stat->written = 0;
+		}
 		if (stat->size) {
-			printf("%s%#.8llx (%.2f %s / %.2f %s %.2f%%) @ %f %s/Sec...\n", msg, pos,
+			printf("%s%#.8llx (%.2f %s / %.2f %s %.2f%%) @ %f %s/Sec%s...\n", msg, pos,
 					   hpos, pos_units,
 					   stat->size_human, stat->size_units,
 					   (double)pos / stat->size * 100.0,
-					   rate, units);
+					   rate, units, written_percent);
 		} else {
-			printf("%s%#.8llx (%.2f %s) @ %f %s/Sec...\n", msg, pos,
-					   hpos, pos_units, rate, units);
+			printf("%s%#.8llx (%.2f %s) @ %f %s/Sec%s...\n", msg, pos,
+					   hpos, pos_units, rate, units, written_percent);
 		}
 		stat->last_usec = usec;
 		stat->last_pos = pos;

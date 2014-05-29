@@ -82,7 +82,7 @@ static u64 writedata(char *file, u64 start, u64 size, unsigned int seed)
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos, size);
+	showstatus_init(&stat, pos, size, 0);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {
@@ -127,7 +127,7 @@ static u64 verifydata(char *file, u64 start, u64 size, unsigned int seed)
 	int blockdone = 0;
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos, size);
+	showstatus_init(&stat, pos, size, 0);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {

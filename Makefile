@@ -9,5 +9,9 @@ dev_one: dev_one.c util.c
 libnotty.so: libnotty.c
 	gcc -Wall -O2 -fpic -shared -ldl -o libnotty.so libnotty.c
 
+stlcam.deb: $(shell find stlcam)
+	echo "Remember - you need to 'chown -R root.root stlcam' first to make sure the ownership is correct"
+	dpkg-deb -b -Zgzip stlcam
+
 clean:
 	rm -f sdtest dev_one libnotty.so

@@ -35,7 +35,7 @@ u64 writedata(char *file, u64 start, int read_before_write)
 	fp = open(file, mode | O_LARGEFILE | O_CREAT | O_SYNC, S_IWUSR|S_IRUSR);
 
 	struct showstatus_state stat;
-	showstatus_init(&stat, pos, size);
+	showstatus_init(&stat, pos, size, read_before_write);
 
 	if (pos) {
 		if (lseek64(fp, pos, SEEK_SET) != pos) {
@@ -54,6 +54,7 @@ u64 writedata(char *file, u64 start, int read_before_write)
 						return 0;
 					}
 					count = write(fp, buf, count);
+					stat.written += count;
 				}
 			} else
 				count = write(fp, buf, BLOCK_SIZE);

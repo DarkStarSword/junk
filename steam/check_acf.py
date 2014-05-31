@@ -378,7 +378,10 @@ def check_acf(acf_filename, opts):
 		app_id = app_state['appID']
 	else:
 		app_id = app_state['appid']
-	name = app_state['UserConfig']['name']
+        try:
+            name = app_state['UserConfig']['name']
+        except:
+            name = app_state['name']
 	ui._print('%s (%s):' % (name, app_id))
 
 	library_root = find_library_root(acf_filename)

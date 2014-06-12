@@ -10,7 +10,7 @@ document.getElementById('market_buynow_dialog_accept_ssa').checked = true;
 
 //refresh_url = 'javascript:s=g_oSearchResults;s.m_iCurrentPage=1;s.GoToPage(0)'
 // refresh_url = 'javascript:document.getElementsByClassName("market_listing_right_cell market_listing_action_buttons")[0].innerHTML="Refreshing...";s=g_oSearchResults;s.m_iCurrentPage=1;s.GoToPage(0)';
-refresh_url = 'javascript:document.getElementById("searchResultsTable").scrollIntoView(true); document.getElementsByClassName("market_listing_right_cell market_listing_action_buttons")[0].innerHTML="Refreshing...";s=g_oSearchResults;s.m_iCurrentPage=1;s.GoToPage(0)';
+refresh_url = 'javascript:document.getElementById("searchResultsTable").scrollIntoView(true); document.getElementsByClassName("market_listing_right_cell market_listing_action_buttons")[0].innerHTML="Refreshing...";s=g_oSearchResults;s.m_iCurrentPage=1;s.GoToPage(0); jQuery.noop()';
 
 elem_new = document.createElement('a');
 elem_new.href = refresh_url;

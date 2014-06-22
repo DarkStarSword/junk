@@ -1,0 +1,10 @@
+font -misc-fixed-medium-r-normal-*-42-*-*-*-*-*-iso10646-*
+
+bindsym Control+Mod1+x exec exec xmodmap ~/.xmodmaprc
+
+# Start i3bar to display a workspace bar (plus the system information i3status
+# finds out, if available)
+bar {
+        status_command i3status -c ~/.i3/configs/i3status-tv.conf
+	# TODO: Music status, launching feedback, etc
+}

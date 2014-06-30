@@ -1,9 +1,10 @@
 [global]
-    font = "-misc-fixed-medium-r-normal-*-13-*-*-*-*-*-iso10646-*"
-
-    modifier = "mod4"
-    key = period
-    history_key = comma
+    font = "-misc-fixed-medium-r-normal-*-24-*-*-*-*-*-iso10646-*"
     follow = keyboard
-
     geometry = "+0-0"
+    dmenu = /usr/bin/dmenu -p dunst -b
+
+[shortcuts]
+    close = mod4+comma
+    history = mod4+shift+comma
+    context = mod4+period

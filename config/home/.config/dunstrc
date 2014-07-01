@@ -1,10 +1,18 @@
 [global]
-    font = "-misc-fixed-medium-r-normal-*-24-*-*-*-*-*-iso10646-*"
+    font = Monospace 10
     follow = keyboard
     geometry = "+0-0"
     dmenu = /usr/bin/dmenu -p dunst -b
+    separator_height = 1
+    padding = 1
+    separator_color = frame
+
+[frame]
+    width = 0
+    color = "#000033"
 
 [shortcuts]
-    close = mod4+comma
-    history = mod4+shift+comma
-    context = mod4+period
+    close_all = mod4+shift+comma
+    history = mod4+comma
+    close = mod4+period
+    context = mod4+shift+period

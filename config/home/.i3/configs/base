@@ -57,18 +57,6 @@ bindsym $mod+Control+Up     resize shrink height 10 px or 10 ppt
 bindsym $mod+Control+$right resize grow width 10 px or 10 ppt
 bindsym $mod+Control+Right  resize grow width 10 px or 10 ppt
 
-# split in horizontal orientation
-# I might want to change this binding to vim style marks...
-bindsym $mod+semicolon split h
-# split in vertical orientation
-bindsym $mod+Shift+semicolon split v
-# These feel more natural since they match the directional keys, but I want to
-# use those key combinations for resizing:
-# bindsym $mod+Control+$left  split h
-# bindsym $mod+Control+$down  split v
-# bindsym $mod+Control+$up    split v
-# bindsym $mod+Control+$right split h
-
 # enter fullscreen mode for the focused container
 bindsym $mod+f fullscreen
 

@@ -68,13 +68,14 @@ _inhibitfd = None
 def inhibit_power_button():
     global _inhibitfd
     logind = get_logind()
-    _inhibitfd = logind.Inhibit('handle-power-key', 'i3companion', 'i3companion handling power button', 'block').take()
+    # Patches welcome if anyone doesn't want the lid switch inhibited
+    _inhibitfd = logind.Inhibit('handle-power-key:handle-lid-switch', 'i3companion', 'i3companion handling power button', 'block').take()
 
 def register_xf86_keys(keybinder):
 	try:
 		inhibit_power_button()
 	except Exception as e:
-		notify('%s inhibiting systemd handle-power-key: %s' % \
+		notify('%s inhibiting systemd handle-power-key & handle-lid-switch: %s' % \
 				(e.__class__.__name__, str(e)), timeout = 5000)
                 raise
 	keybinder.bind_key(0, 'XF86_PowerOff', power_button)

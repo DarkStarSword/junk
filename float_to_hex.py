@@ -12,6 +12,8 @@
 # His module also seemed to be overkill to me, given that the struct module can
 # do exactly the same thing in one line of python, so I wrote my own.
 
+from __future__ import print_function
+
 import struct
 
 def float_to_hex(val):
@@ -55,10 +57,10 @@ def align_output(input):
 def main():
 	import sys
 	if len(sys.argv) == 1:
-		print 'usage: %s {float | hex}...' % sys.argv[0]
+		print('usage: %s {float | hex}...' % sys.argv[0])
 		sys.exit(1)
 
-	print align_output(list(process_vals(sys.argv[1:])))
+	print(align_output(list(process_vals(sys.argv[1:]))))
 
 if __name__ == '__main__':
 	main()

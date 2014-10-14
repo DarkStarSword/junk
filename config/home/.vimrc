@@ -18,6 +18,7 @@ setlocal spell spelllang=en_au
 set spell
 set modeline
 set nowrap
+set wildmode=longest,list
 set tags=./tags,tags;
 "set formatprg=par
 set shell=/bin/sh " fish doesn't work since vim encloses the command in brackets

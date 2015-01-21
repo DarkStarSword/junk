@@ -459,6 +459,8 @@ def main():
 		args = glob.glob(os.path.join(opts.steam_root, 'SteamApps/appmanifest_*.acf'))
 	elif opts.steam_root is None:
 		opts.steam_root = find_steam_root(opts, args[0])
+	else:
+		opts.steam_root = os.path.expanduser(opts.steam_root)
 
 	if opts.verbose:
 		ui._print("Using Steam root: '%s'" % opts.steam_root)
@@ -469,3 +471,5 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+# vi:noet:ts=8:sw=8

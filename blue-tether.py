@@ -5,6 +5,7 @@ import subprocess
 import sys
 import os
 import optparse
+import re
 
 from dbus.mainloop.glib import DBusGMainLoop
 import glib, gobject
@@ -18,6 +19,14 @@ dhcp_clients = [
   ['/sbin/dhclient', '-v', '-d'],
   ['/sbin/udhcpc', '-f', '-i'],
 ]
+
+# FUCKING BLUEZ DEVS!
+# In Bluez 4, this is 'org.bluez.Network'
+# In Bluez 5, this is 'org.bluez.Network1'
+# And the DBUS API means we won't find out until later if we got it wrong!
+# Currently relying on another Bluez 5 breakage to switch this string...
+# TODO: introspect which is in use instead
+BLUEZ_NETWORK_IFACE = 'org.bluez.Network'
 
 def process_config_file(opts, parser):
   opts.config = os.path.expanduser(opts.config)
@@ -116,10 +125,13 @@ class BluezNetMonitor(object):
     self.is_up = False
 
     self.dev_proxy = self.bus.get_object('org.bluez', self.bd_path)
-    self.dev_network = dbus.Interface(self.dev_proxy, 'org.bluez.Network')
+    self.dev_network = dbus.Interface(self.dev_proxy, BLUEZ_NETWORK_IFACE)
 
+    # More Bluez 4/5 differences:
     bus.add_signal_receiver(self.property_changed_callback, 'PropertyChanged',
-        'org.bluez.Network', None, bd_path)
+        BLUEZ_NETWORK_IFACE, None, bd_path)
+    bus.add_signal_receiver(self.properties_changed_callback_bluez5, 'PropertiesChanged',
+        'org.freedesktop.DBus.Properties', None, bd_path)
 
     self.connect()
 
@@ -131,6 +143,19 @@ class BluezNetMonitor(object):
     if prop == 'Connected':
       val and self.up()
       val or self.down()
+
+  def properties_changed_callback_bluez5(self, interface, objects, signature):
+    print 'Properties Changed (Bluez 5): %s: %s (%s)' % (interface, objects, signature)
+    if interface != BLUEZ_NETWORK_IFACE:
+      return
+    if 'Interface' in objects:
+      if self.is_up and objects['Interface'] != self.Interface:
+        self.down()
+      self.props['Interface'] = objects['Interface']
+    if 'Connected' in objects:
+      self.props['Connected'] = objects['Connected']
+      objects['Connected'] and self.up()
+      objects['Connected'] or self.down()
 
   def up(self):
     if self.is_up:
@@ -177,6 +202,40 @@ class BluezNetMonitor(object):
     if ret: self.no_connection()
     return ret
 
+  def disconnect(self):
+    print 'Disconnecting...'
+    self.dev_network.Disconnect()
+
+class AdapterNotFound(Exception): pass
+
+def fucking_bluez_devs_hate_backwards_compatibility_what_bloody_arseholes(bus, adapter=None):
+  global BLUEZ_NETWORK_IFACE
+  bluez_proxy = bus.get_object('org.bluez', '/')
+  try: # the old method that worked in Bluez 4 (of course, the bluez 3 method was broken years ago):
+    bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
+    if adapter is None:
+      return bluez_manager.DefaultAdapter()
+    return bluez_manager.FindAdapter(adapter)
+  except dbus.exceptions.DBusException:
+    print('Bluez developers SUCK!')
+    BLUEZ_NETWORK_IFACE = 'org.bluez.Network1'
+    # There's probably a more direct way to get this info built into the Python
+    # DBUS API...
+    manager = dbus.Interface(bluez_proxy, 'org.freedesktop.DBus.ObjectManager')
+    objects = manager.GetManagedObjects()
+    pattern = re.compile(r'/org/bluez/[^/]+$')
+    adapters = filter(lambda x: pattern.match(x), objects.keys())
+    if adapter is None:
+      return sorted(adapters)[0]
+    for path in adapters:
+      proxy = bus.get_object('org.bluez', path)
+      # Probably a more direct way to do this too...
+      properties = dbus.Interface(proxy, dbus.PROPERTIES_IFACE)
+      address = properties.Get('org.bluez.Adapter1', 'Address')
+      if address.lower() == adapter.lower():
+        return path
+    raise AdapterNotFound(adapter)
+
 def main():
   opts = get_config()
 
@@ -187,12 +246,8 @@ def main():
   main_loop = glib.MainLoop()
 
   bus = dbus.SystemBus()
-  bluez_proxy = bus.get_object('org.bluez', '/')
-  bluez_manager = dbus.Interface(bluez_proxy, 'org.bluez.Manager')
-  if opts.adapter is not None:
-    adapter = bluez_manager.FindAdapter(opts.adapter)
-  else:
-    adapter = bluez_manager.DefaultAdapter()
+  # FIXME: BROKEN IN BLUEZ 5!!!!
+  adapter = fucking_bluez_devs_hate_backwards_compatibility_what_bloody_arseholes(bus, opts.adapter)
 
   bd_path = '%s/dev_%s' % (adapter, opts.bdaddr.upper().replace(':', '_'))
 
@@ -209,6 +264,10 @@ def main():
 
   print 'Press enter to close connection'
   main_loop.run()
+
+  # Bluez 5 now seem to require manual disconnection... probably for the best,
+  # but an incompatible change none the less:
+  bluez_net_monitor.disconnect()
 
 if __name__ == '__main__':
   main()

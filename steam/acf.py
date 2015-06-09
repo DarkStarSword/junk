@@ -25,8 +25,7 @@ def parse_quoted_token(f):
 		ret += byte
 
 class AcfNode(dict):
-	def __init__(self, f, acf_file=None):
-		self.acf_file = acf_file
+	def __init__(self, f):
 		while True:
 			try:
 				token_type = scan_for_next_token(f)
@@ -42,13 +41,13 @@ class AcfNode(dict):
 			if token_type == '"':
 				self[name] = parse_quoted_token(f)
 			elif token_type == '{':
-				self[name] = AcfNode(f, acf_file)
+				self[name] = AcfNode(f)
 			else:
 				assert(False)
 
 def parse_acf(filename):
 	with file(filename, 'r') as f:
-		return AcfNode(f, filename)
+		return AcfNode(f)
 
 def app_id(acf):
 	try:
@@ -71,6 +70,9 @@ def app_name(acf):
 
 def install_dir(acf):
 	return acf['AppState']['installdir']
+
+def state_flags(acf):
+	return int(acf['AppState']['StateFlags'])
 
 def main():
 	for filename in sys.argv[1:]:

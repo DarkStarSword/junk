@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # FIXME: Upgrade dependencies to Python3
 
+from __future__ import print_function
+
 import sys, os, shutil, glob
 import acf
 
@@ -35,6 +37,10 @@ class Library(dict):
 				print('{} in multiple libraries with different names: "{}", "{}"'.format(appid, app_names[appid], name))
 			app_names[appid] = name
 
+	@property
+	def game_path(self):
+		return os.path.join(self.path, 'SteamApps', 'common')
+
 def parse_libraries():
 	print('Loading libraries...')
 	global main_libraries, update_required_library
@@ -42,6 +48,7 @@ def parse_libraries():
 	update_required_library = Library(update_required_library_path)
 
 def check_duplicates():
+	print('Checking for AppIDs installed in multiple libraries...')
 	duplicates = {}
 	for i, lib1 in enumerate(main_libraries):
 		for lib2 in main_libraries[i+1:]:
@@ -52,9 +59,34 @@ def check_duplicates():
 				duplicates[appid].add(lib1.path)
 				duplicates[appid].add(lib2.path)
 	if duplicates:
-		print('AppIDs installed in multiple libraries:')
 		for appid in duplicates:
 			print('  App ID {} ({}) found in: {}'.format(appid, app_names[appid], ', '.join(sorted(duplicates[appid]))))
+
+def check_app_dirs():
+	print('\nChecking for bad or missing install dirs...')
+	for library in main_libraries + [update_required_library]:
+		for appid, app in library.iteritems():
+			installdir = acf.install_dir(app)
+			if '/' in installdir or '\\' in installdir:
+				print('  App ID {} ({}) specifies absolute installdir:'.format(appid, app_names[appid]))
+				print('        "{}"'.format(installdir))
+				if not os.path.isdir(installdir):
+					print("        ... and it's missing")
+			else:
+				# TODO: Check for matches with differing case
+				path = os.path.join(library.game_path, installdir)
+				if not os.path.isdir(path):
+					print('  App ID {} ({}) missing installation directory:'.format(appid, app_names[appid]))
+					print('        "{}"'.format(path))
+
+def check_untracked_directories():
+	print('\nChecking for untracked game directories...')
+	for library in main_libraries + [update_required_library]:
+		tracked_dirs = set([ acf.install_dir(x) for x in library.itervalues() ])
+		actual_dirs = set(os.listdir(library.game_path))
+		# TODO: Check for matches with differing case
+		for untracked in actual_dirs.difference(tracked_dirs):
+			print('  Untracked directory: {}'.format(os.path.join(library.game_path, untracked)))
 
 def synchronise_update_required():
 	apps_in_update_required = set()
@@ -102,6 +134,8 @@ def synchronise_update_required():
 def main():
 	parse_libraries()
 	check_duplicates()
+	check_app_dirs()
+	check_untracked_directories()
 	synchronise_update_required()
 
 if __name__ == '__main__':

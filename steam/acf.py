@@ -49,31 +49,6 @@ def parse_acf(filename):
 	with file(filename, 'r') as f:
 		return AcfNode(f)
 
-def app_id(acf):
-	try:
-		return acf['AppState']['appID']
-	except:
-		return acf['AppState']['appid']
-
-def app_name(acf):
-	try:
-		return acf['AppState']['name']
-	except:
-		try:
-			return acf['AppState']['UserConfig']['name']
-		except:
-			try:
-				return app_id(acf)
-			except KeyError as e:
-				print("Unable to identify app name. Missing key {}. Contents: {}".format(str(e), acf))
-				return None
-
-def install_dir(acf):
-	return acf['AppState']['installdir']
-
-def state_flags(acf):
-	return int(acf['AppState']['StateFlags'])
-
 def main():
 	for filename in sys.argv[1:]:
 		print parse_acf(filename)

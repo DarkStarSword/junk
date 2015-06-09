@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import sys, os, shutil, glob
 import acf
+import distutils.dir_util, distutils.file_util
 
 # FIXME: Determine this from Steam
 main_libraries_paths = [
@@ -20,11 +21,14 @@ update_required_library_path = '/cygdrive/g/SteamLibrary'
 # FIXME: Using UNIX paths here!
 
 class App(object):
-	def __init__(self, acf_file, add_to_apps):
+	def __init__(self, acf_file, library, add_to_apps):
 		self.acf_file = acf_file
+		self.library = library
 		self.status = acf.parse_acf(acf_file)
-		self.appid = acf.app_id(self.status)
-		self.name = acf.app_name(self.status)
+
+		# Sanity check if the acf file appears to be valid before we add it to any lists:
+		self.appid
+		self.name
 
 		if self.appid in app_names and app_names[self.appid] != self.name:
 			print('{} in multiple libraries with different names: "{}", "{}"'.format(self.appid, app_names[self.appid], self.name))
@@ -35,6 +39,47 @@ class App(object):
 				apps[self.appid] = []
 			apps[self.appid].append(self)
 
+	@property
+	def appid(self):
+		try:
+			return self.status['AppState']['appID']
+		except:
+			return self.status['AppState']['appid']
+
+	@property
+	def name(self):
+		try:
+			return self.status['AppState']['name']
+		except:
+			try:
+				return self.status['AppState']['UserConfig']['name']
+			except:
+				try:
+					return self.appid
+				except KeyError as e:
+					print("Unable to identify app name. Missing key {}. Contents: {}".format(str(e), self.status))
+					return None
+
+	@property
+	def install_dir(self):
+		return self.status['AppState']['installdir']
+
+	@property
+	def path(self):
+		return os.path.join(self.library.game_path, self.install_dir)
+
+	@property
+	def acf_path(self):
+		return os.path.join(self.library.acf_path, self.acf_file)
+
+	@property
+	def state_flags(self):
+		return int(self.status['AppState']['StateFlags'])
+
+	@property
+	def last_updated(self):
+		return int(self.status['AppState']['LastUpdated'])
+
 apps = {}
 app_names = {}
 
@@ -43,11 +88,15 @@ class Library(dict):
 		self.path = path
 		for acf_file in glob.glob('{}/SteamApps/*.acf'.format(path)):
 			try:
-				app = App(acf_file, add_to_apps)
+				app = App(acf_file, self, add_to_apps)
 			except KeyError as e:
 				print('{} missing key {}'.format(acf_file, str(e)))
 				continue
 			self[app.appid] = app
+
+	@property
+	def acf_path(self):
+		return os.path.join(self.path, 'SteamApps')
 
 	@property
 	def game_path(self):
@@ -78,7 +127,7 @@ def check_app_dirs():
 	print('\nChecking for bad or missing install dirs...')
 	for library in main_libraries + [update_required_library]:
 		for appid, app in library.iteritems():
-			installdir = acf.install_dir(app.status)
+			installdir = app.install_dir
 			if '/' in installdir or '\\' in installdir:
 				print('  App ID {} ({}) specifies absolute installdir:'.format(appid, app_names[appid]))
 				print('        "{}"'.format(installdir))
@@ -94,7 +143,7 @@ def check_app_dirs():
 def check_untracked_directories():
 	print('\nChecking for untracked game directories...')
 	for library in main_libraries + [update_required_library]:
-		tracked_dirs = set([ acf.install_dir(x.status) for x in library.itervalues() ])
+		tracked_dirs = set([ x.install_dir for x in library.itervalues() ])
 		actual_dirs = set(os.listdir(library.game_path))
 		# TODO: Check for matches with differing case
 		for untracked in actual_dirs.difference(tracked_dirs):
@@ -104,24 +153,21 @@ def synchronise_update_required():
 	print('\nSynchronising update library...')
 	for library in main_libraries:
 		for appid, app in library.iteritems():
-			status = app.status
-
-			StateFlags = acf.state_flags(status)
-			if StateFlags == 4:
+			if app.state_flags == 4:
 				continue
-			print('\n{} StateFlags = {}'.format(app.name, StateFlags))
+			print('\n  {} StateFlags = {}'.format(app.name, app.state_flags))
 
 			if appid in update_required_library:
-				print('{} already in {}'.format(app.name, update_required_library.path))
+				print('  {} already in {}'.format(app.name, update_required_library.path))
 				continue
 
-			game_dir = acf.install_dir(status)
-			source = os.path.join(library, 'SteamApps', 'common', game_dir)
-			dest = os.path.join(update_required_library_path, 'SteamApps', 'common', game_dir)
+			game_dir = app.install_dir
+			source = os.path.join(library.game_path, game_dir)
+			dest = os.path.join(update_required_library.game_path, game_dir)
 			acf_basename = os.path.basename(app.acf_file).lower()
-			acf_dest = os.path.join(update_required_library_path, 'SteamApps', acf_basename)
+			acf_dest = os.path.join(update_required_library.acf_path, acf_basename)
 
-			print('Copying {} to {}'.format(app.name, dest))
+			print('  Copying {} to {}'.format(app.name, dest))
 			# FIXME: May need to merge existing trees)
 			# TODO: If we have all the mounted manifest files, use
 			# them to copy only the files that are known to Steam
@@ -129,10 +175,46 @@ def synchronise_update_required():
 				shutil.copytree(source, dest)
 				shutil.copy(app.acf_file, acf_dest)
 			except Exception as e:
-				print('{} occurred while copying {}: {}'.format(e.__class__.__name__, app.name, str(e)))
+				print('  {} occurred while copying {}: {}'.format(e.__class__.__name__, app.name, str(e)))
 
-	# TODO: Check if any games in the update required library should be
-	# copied back to the regular libraries
+def synchronise_update_required_reverse():
+	print('\nSynchronising back updates...')
+	for appid, app in update_required_library.iteritems():
+		if app.state_flags != 4:
+			continue
+
+		if appid not in apps:
+			print('\n  App ID {} ({}) not found in any main library, not synchronising!'.format(appid, app.name))
+			continue
+
+		if len(apps[appid]) != 1:
+			print('\n  App ID {} ({}) in multiple main libraries, not synchronising!'.format(appid, app.name))
+			continue
+
+		installed = apps[appid][0]
+		if installed.status == app.status:
+			# print('\n  {} ({}) is up to date'.format(appid, app.name))
+			continue
+
+		if installed.last_updated > app.last_updated:
+			print('\n  Local install of app {} ({}) is more recent, not synchronising!'.format(appid, app.name))
+			continue
+
+		print('\n  Copying {} ({}) to {}...'.format(app.name, appid, installed.path))
+
+		# TODO: Do this safely if Steam is running. Not sure what the
+		# best option is for that - if nothing else I might be able to
+		# rename the target directory, tell Steam to uninstall it, copy
+		# the files, rename it back then restart Steam.
+
+		# None of the built in copy method in Python are exactly what I
+		# want. This will do for now, but eventually I'd like to use my
+		# own logic to decide which files to update - if the filesize
+		# or SHA1 differs (either obtained from a manifest file or
+		# reading the file) it should be updated. If all manifest files
+		# are present we can also skip (or even remove) untracked files.
+		distutils.dir_util.copy_tree(app.path, installed.path, update=1)
+		distutils.file_util.copy_file(app.acf_path, installed.acf_path)
 
 def main():
 	parse_libraries()
@@ -141,6 +223,7 @@ def main():
 	check_untracked_directories()
 	# TODO: check_stale_downloads()
 	synchronise_update_required()
+	synchronise_update_required_reverse()
 
 if __name__ == '__main__':
 	main()

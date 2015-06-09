@@ -89,33 +89,28 @@ def check_untracked_directories():
 			print('  Untracked directory: {}'.format(os.path.join(library.game_path, untracked)))
 
 def synchronise_update_required():
-	apps_in_update_required = set()
-	for acf_file in glob.glob('{}/SteamApps/*.acf'.format(update_required_library_path)):
-		# TODO: Check if main library is more recent
-		apps_in_update_required.add(os.path.basename(acf_file).lower())
-
-	for library in main_libraries_paths:
-		for acf_file in glob.glob('{}/SteamApps/*.acf'.format(library)):
-			status = acf.parse_acf(acf_file)
+	print('\nSynchronising update library...')
+	for library in main_libraries:
+		for appid, status in library.iteritems():
 			name = acf.app_name(status)
 
 			try:
 				StateFlags = int(status['AppState']['StateFlags'])
 			except KeyError as e:
-				print('{} missing key {}'.format(acf_file, str(e)))
+				print('{} missing key {}'.format(appid, str(e)))
 				continue
 			if StateFlags == 4:
 				continue
 			print('\n{} StateFlags = {}'.format(name, StateFlags))
 
-			acf_basename = os.path.basename(acf_file).lower()
-			if acf_basename in apps_in_update_required:
-				print('{} already in {}'.format(name, update_required_library_path))
+			if appid in update_required_library:
+				print('{} already in {}'.format(name, update_required_library.path))
 				continue
 
 			game_dir = acf.install_dir(status)
 			source = os.path.join(library, 'SteamApps', 'common', game_dir)
 			dest = os.path.join(update_required_library_path, 'SteamApps', 'common', game_dir)
+			acf_basename = os.path.basename(status.acf_file).lower()
 			acf_dest = os.path.join(update_required_library_path, 'SteamApps', acf_basename)
 
 			print('Copying {} to {}'.format(name, dest))
@@ -124,7 +119,7 @@ def synchronise_update_required():
 			# them to copy only the files that are known to Steam
 			try:
 				shutil.copytree(source, dest)
-				shutil.copy(acf_file, acf_dest)
+				shutil.copy(status.acf_file, acf_dest)
 			except Exception as e:
 				print('{} occurred while copying {}: {}'.format(e.__class__.__name__, name, str(e)))
 

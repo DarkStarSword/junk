@@ -18,6 +18,34 @@ main_libraries_paths = [
 # FIXME: Pass in with command line or read from config file
 update_required_library_path = '/cygdrive/g/SteamLibrary'
 
+# http://forums.steampowered.com/forums/showthread.php?t=2952766
+class AppState(object):
+	Invalid        = 0x000000
+	Uninstalled    = 0x000001
+	UpdateRequired = 0x000002
+	FullyInstalled = 0x000004
+	Encrypted      = 0x000008
+	Locked         = 0x000010
+	FilesMissing   = 0x000020
+	AppRunning     = 0x000040
+	FilesCorrupt   = 0x000080
+	UpdateRunning  = 0x000100
+	UpdatePaused   = 0x000200
+	UpdateStarted  = 0x000400
+	Uninstalling   = 0x000800
+	BackupRunning  = 0x001000
+	Reconfiguring  = 0x010000
+	Validating     = 0x020000
+	AddingFiles    = 0x040000
+	Preallocating  = 0x080000
+	Downloading    = 0x100000
+	Staging        = 0x200000
+	Committing     = 0x400000
+	UpdateStopping = 0x800000
+
+	# Any others?
+	CopyToUpdateRequired = UpdateRequired | FilesMissing | FilesCorrupt
+
 # FIXME: Using UNIX paths here!
 
 class App(object):
@@ -153,7 +181,7 @@ def synchronise_update_required():
 	print('\nSynchronising update library...')
 	for library in main_libraries:
 		for appid, app in library.iteritems():
-			if app.state_flags == 4:
+			if (app.state_flags & AppState.CopyToUpdateRequired) == 0:
 				continue
 			print('\n  {} StateFlags = {}'.format(app.name, app.state_flags))
 
@@ -180,7 +208,7 @@ def synchronise_update_required():
 def synchronise_update_required_reverse():
 	print('\nSynchronising back updates...')
 	for appid, app in update_required_library.iteritems():
-		if app.state_flags != 4:
+		if app.state_flags != AppState.FullyInstalled:
 			continue
 
 		if appid not in apps:

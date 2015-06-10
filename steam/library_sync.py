@@ -196,7 +196,7 @@ def synchronise_update_required_reverse():
 			# print('\n  {} ({}) is up to date'.format(appid, app.name))
 			continue
 
-		if installed.last_updated > app.last_updated:
+		if installed.last_updated >= app.last_updated:
 			print('\n  Local install of app {} ({}) is more recent, not synchronising!'.format(appid, app.name))
 			continue
 

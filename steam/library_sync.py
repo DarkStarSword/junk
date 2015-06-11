@@ -175,9 +175,8 @@ def check_app_dirs():
 def check_untracked_directories():
 	print('\nChecking for untracked game directories...')
 	for library in main_libraries + [update_required_library]:
-		tracked_dirs = set([ x.install_dir for x in library.itervalues() ])
-		actual_dirs = set(os.listdir(library.game_path))
-		# TODO: Check for matches with differing case
+		tracked_dirs = set(map(str.lower, [ x.install_dir for x in library.itervalues() ]))
+		actual_dirs = set(map(str.lower, os.listdir(library.game_path)))
 		for untracked in actual_dirs.difference(tracked_dirs):
 			print('  Untracked directory: {}'.format(os.path.join(library.game_path, untracked)))
 

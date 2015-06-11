@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, shutil, glob
+import sys, os, shutil, re
 import acf
 import distutils.dir_util, distutils.file_util
 
@@ -114,7 +114,11 @@ app_names = {}
 class Library(dict):
 	def __init__(self, path, add_to_apps=True):
 		self.path = path
-		for acf_file in glob.glob('{}/SteamApps/*.acf'.format(path)):
+		SteamApps = os.path.join(path, 'SteamApps')
+		files = os.listdir(os.path.join(path, 'SteamApps'))
+		pattern = re.compile(r'^appmanifest_[0-9]+.acf$', re.IGNORECASE)
+		for file in [ x for x in files if pattern.match(x) ]:
+			acf_file = os.path.join(SteamApps, file)
 			try:
 				app = App(acf_file, self, add_to_apps)
 			except KeyError as e:

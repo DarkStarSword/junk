@@ -161,7 +161,7 @@ def check_app_dirs():
 		for appid, app in library.iteritems():
 			installdir = app.install_dir
 			if '/' in installdir or '\\' in installdir:
-				print('  App ID {} ({}) specifies absolute installdir:'.format(appid, app_names[appid]))
+				print('  App ID {} ({}) in {} specifies absolute installdir:'.format(appid, app_names[appid], library.path))
 				print('        "{}"'.format(installdir))
 				if not os.path.isdir(installdir):
 					print("        ... and it's missing")
@@ -169,7 +169,7 @@ def check_app_dirs():
 				# TODO: Check for matches with differing case
 				path = os.path.join(library.game_path, installdir)
 				if not os.path.isdir(path):
-					print('  App ID {} ({}) missing installation directory:'.format(appid, app_names[appid]))
+					print('  App ID {} ({}) in {} missing installation directory:'.format(appid, app_names[appid], library.path))
 					print('        "{}"'.format(path))
 
 def check_untracked_directories():

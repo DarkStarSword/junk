@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 
-import sys, os, shutil, re
+import sys, os, shutil, re, argparse
 import acf
 import distutils.dir_util, distutils.file_util
 
@@ -247,14 +247,38 @@ def synchronise_update_required_reverse():
 		distutils.dir_util.copy_tree(app.path, installed.path, update=1)
 		distutils.file_util.copy_file(app.acf_path, installed.acf_path)
 
+def parse_args():
+	parser = argparse.ArgumentParser(description = 'Steam library manager')
+	parser.add_argument('--check', action='store_true')
+	parser.add_argument('--copy-update-required', action='store_true')
+	parser.add_argument('--sync-updated', action='store_true')
+	args = parser.parse_args()
+
+	if not args.check and \
+	   not args.copy_update_required and \
+	   not args.sync_updated:
+		   args.check = True
+		   args.copy_update_required = True
+		   args.sync_updated = True
+
+	return args
+
 def main():
+	args = parse_args()
+
 	parse_libraries()
-	check_duplicates()
-	check_app_dirs()
-	check_untracked_directories()
-	# TODO: check_stale_downloads()
-	synchronise_update_required()
-	synchronise_update_required_reverse()
+
+	if args.check:
+		check_duplicates()
+		check_app_dirs()
+		check_untracked_directories()
+		# TODO: check_stale_downloads()
+
+	if args.copy_update_required:
+		synchronise_update_required()
+
+	if args.sync_updated:
+		synchronise_update_required_reverse()
 
 if __name__ == '__main__':
 	main()

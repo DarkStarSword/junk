@@ -164,8 +164,9 @@ def verify_file_hash(filename, depot_hash, indent, opts):
 
 def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 	def verify_hash():
-		if opts.verify and not verify_file_hash(filename, depot_hash, indent+g_indent, opts):
+		if (opts.verify or opts.delete_bad) and not verify_file_hash(filename, depot_hash, indent+g_indent, opts):
 			ui._cprint('red', ' (BAD CHECKSUM)', end='')
+			return True
 	def check_filesize():
 		if depot_hash.filetype == 'directory':
 			return True
@@ -174,6 +175,7 @@ def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 		if not check_filesize():
 			ui._cprint('red', ' (Filesize != %i, %+i)' % \
 					(depot_hash.filesize, filesize - depot_hash.filesize))
+			return True
 
 	ok = True
 	filenames = FilenameSet()
@@ -188,27 +190,35 @@ def verify_manifest_files_exist(manifest_path, game_path, indent, opts):
 		if found:
 			filesize = os.stat(filename).st_size
 
+		corrupt = False
+
 		if not correct:
 			ui._print(indent, end='')
 			ui._print(pretty, end='')
 			if found:
-				warn_filesize()
-			sys.stdout.flush()
-			verify_hash()
-			if not found:
+				corrupt = warn_filesize()
+				sys.stdout.flush()
+				corrupt = corrupt or verify_hash()
+				if corrupt and opts.delete_bad:
+					ui._cprint('red', ' (DELETED)')
+					os.remove(filename)
+				else:
+					ui._print(' (CASE MISMATCH, ', end='')
+					if not opts.rename:
+						ui._print('rerun with -r to fix)')
+					else:
+						ui._print('renamed)')
+			else:
 				ok = False
 				ui._print(' (FILE MISSING)')
-			else:
-				ui._print(' (CASE MISMATCH, ', end='')
-				if not opts.rename:
-					ui._print('rerun with -r to fix)')
-				else:
-					ui._print('renamed)')
-		elif opts.verbose > 2 or opts.verify or not check_filesize():
+		elif opts.verbose > 2 or opts.verify or opts.delete_bad or not check_filesize():
 			ui._print(indent + filename, end='')
-			warn_filesize()
+			corrupt = warn_filesize()
 			sys.stdout.flush()
-			verify_hash()
+			corrupt = corrupt or verify_hash()
+			if corrupt and opts.delete_bad:
+				ui._cprint('red', ' (DELETED)', end='')
+				os.remove(filename)
 			ui._print()
 	return (ok, filenames)
 
@@ -438,7 +448,9 @@ def main():
 			help='Specify which mounted depots to process. Can be specified multiple times.')
 	# '-d': Interractively delete (implies -e) files that not listed in the manifest file
 	parser.add_option('-D', '--delete', action='store_true',
-			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. Also beware that a few games (e.g. Borderlands) still have their DLC managed by the legacy NCF format, which this script is not aware of and could therefore delete required files. BE CAREFUL WITH THIS OPTION!')
+			help='Delete any extraneous files, without asking for confirmation (implies -e). CAUTION: Some games may store legitimate files in their directory that are not tracked by Steam which this option will delete. BE CAREFUL WITH THIS OPTION!')
+	parser.add_option('--delete-bad', action='store_true',
+			help='Delete any files with bad checksums, without asking for confirmation (implies --verify). CAUTION: Some games may store legitimate configuration files in their directory which this option may delete, potentially losing settings. BE CAREFUL WITH THIS OPTION!')
 	parser.add_option('-M', '--move', action='store_true', help="Move any extraneous files to SteamApps/common/game~EXTRANEOUS (implies -e). rsync may be used to merge them back into the game directory later.")
 	parser.add_option('-U', '--uninstall', action='store_true',
 			help="Mark games with bad acf files (Currently that means 0 depotcaches mounted, but that definition may change in the future) as uninstalled. This WILL NOT DELETE THE GAME - it is intended to quickly remove bad acf files that may be interfering with launching or updating particular games. These games will need to be manually re-installed in Steam. (NOTE: Restart Steam afterwards)")

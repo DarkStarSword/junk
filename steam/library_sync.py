@@ -183,7 +183,14 @@ def check_untracked_directories():
         tracked_dirs = set(map(str.lower, [ x.install_dir for x in library.itervalues() ]))
         actual_dirs = set(map(str.lower, os.listdir(library.game_path)))
         for untracked in actual_dirs.difference(tracked_dirs):
-            print('  Untracked directory: {}'.format(os.path.join(library.game_path, untracked)))
+            path = os.path.join(library.game_path, untracked)
+            print('  Untracked directory: {}'.format(path), end='')
+            if args.remove_untracked:
+                print(' Removing...', end='')
+                sys.stdout.flush()
+                shutil.rmtree(path)
+                print(' Done.', end='')
+            print()
 
 def synchronise_update_required():
     print('\nSynchronising update library...')
@@ -266,6 +273,8 @@ def parse_args():
             help='Copy any games that require updates to the library specified by --updates-library')
     parser.add_argument('--sync-updated', action='store_true',
             help='Copy any games that have been updated in the library specified by --updates-library back to the main library')
+    parser.add_argument('--remove-untracked', action='store_true',
+            help='Remove untracked directories from libraries (USE WITH CAUTION)')
     args = parser.parse_args()
 
     # TODO: Replace with config file
@@ -288,8 +297,9 @@ def main():
     if args.check:
         check_duplicates()
         check_app_dirs()
-        check_untracked_directories()
         # TODO: check_stale_downloads()
+    if args.check or args.remove_untracked:
+        check_untracked_directories()
 
     if args.copy_update_required:
         synchronise_update_required()

@@ -136,9 +136,14 @@ class Library(dict):
 
 def parse_libraries():
 	print('Loading libraries...')
-	global main_libraries, update_required_library
-	main_libraries = map(Library, main_libraries_paths)
-	update_required_library = Library(update_required_library_path, False)
+	global main_libraries, update_required_library, all_libraries
+	main_libraries = map(Library, args.library)
+	if args.updates_library:
+		update_required_library = Library(args.updates_library, False)
+		all_libraries = main_libraries + [update_required_library]
+	else:
+		update_required_library = None
+		all_libraries = main_libraries
 
 def check_duplicates():
 	print('Checking for AppIDs installed in multiple libraries...')
@@ -157,7 +162,7 @@ def check_duplicates():
 
 def check_app_dirs():
 	print('\nChecking for bad or missing install dirs...')
-	for library in main_libraries + [update_required_library]:
+	for library in all_libraries:
 		for appid, app in library.iteritems():
 			installdir = app.install_dir
 			if '/' in installdir or '\\' in installdir:
@@ -174,7 +179,7 @@ def check_app_dirs():
 
 def check_untracked_directories():
 	print('\nChecking for untracked game directories...')
-	for library in main_libraries + [update_required_library]:
+	for library in all_libraries:
 		tracked_dirs = set(map(str.lower, [ x.install_dir for x in library.itervalues() ]))
 		actual_dirs = set(map(str.lower, os.listdir(library.game_path)))
 		for untracked in actual_dirs.difference(tracked_dirs):
@@ -248,24 +253,36 @@ def synchronise_update_required_reverse():
 		distutils.file_util.copy_file(app.acf_path, installed.acf_path)
 
 def parse_args():
+	global args
+
 	parser = argparse.ArgumentParser(description = 'Steam library manager')
-	parser.add_argument('--check', action='store_true')
-	parser.add_argument('--copy-update-required', action='store_true')
-	parser.add_argument('--sync-updated', action='store_true')
+	parser.add_argument('-l', '--library', action='append',
+			help='Location of a regular Steam library to process, can specify multiple times')
+	parser.add_argument('--updates-library',
+			help='A special library that is intended for games that require updates, such as a library on a portable hard drive.')
+	parser.add_argument('--check', action='store_true',
+			help='Check the libraries for common problems')
+	parser.add_argument('--copy-update-required', action='store_true',
+			help='Copy any games that require updates to the library specified by --updates-library')
+	parser.add_argument('--sync-updated', action='store_true',
+			help='Copy any games that have been updated in the library specified by --updates-library back to the main library')
 	args = parser.parse_args()
+
+	# TODO: Replace with config file
+	if not args.library and not args.updates_library:
+		args.library = main_libraries_paths
+		args.updates_library = update_required_library_path
 
 	if not args.check and \
 	   not args.copy_update_required and \
 	   not args.sync_updated:
-		   args.check = True
-		   args.copy_update_required = True
-		   args.sync_updated = True
-
-	return args
+		args.check = True
+		if args.updates_library:
+			args.copy_update_required = True
+			args.sync_updated = True
 
 def main():
-	args = parse_args()
-
+	parse_args()
 	parse_libraries()
 
 	if args.check:

@@ -135,8 +135,12 @@ class Library(dict):
         return os.path.join(self.path, 'SteamApps', 'common')
 
 def parse_libraries():
+    global main_libraries
+    global update_required_library
+    global all_libraries
+    global new_games_library
+
     print('Loading libraries...')
-    global main_libraries, update_required_library, all_libraries
     main_libraries = map(Library, args.library)
     if args.updates_library:
         update_required_library = Library(args.updates_library, False)
@@ -144,6 +148,14 @@ def parse_libraries():
     else:
         update_required_library = None
         all_libraries = main_libraries
+
+    if args.copy_new_games_to:
+        new_games_library = main_libraries[args.library.index(args.copy_new_games_to)]
+    elif len(main_libraries) == 1:
+        new_games_library = main_libraries[0]
+    else:
+        new_games_library = None
+
 
 def check_duplicates():
     print('Checking for AppIDs installed in multiple libraries...')
@@ -220,6 +232,18 @@ def synchronise_update_required():
             except Exception as e:
                 print('  {} occurred while copying {}: {}'.format(e.__class__.__name__, app.name, str(e)))
 
+def synchronise_game(app, dest_path, dest_acf_path):
+        print('\n  Copying {} ({}) to {}...'.format(app.name, app.appid, dest_path))
+
+        # None of the built in copy method in Python are exactly what I
+        # want. This will do for now, but eventually I'd like to use my
+        # own logic to decide which files to update - if the filesize
+        # or SHA1 differs (either obtained from a manifest file or
+        # reading the file) it should be updated. If all manifest files
+        # are present we can also skip (or even remove) untracked files.
+        distutils.dir_util.copy_tree(app.path, dest_path, update=1)
+        distutils.file_util.copy_file(app.acf_path, dest_acf_path)
+
 def synchronise_update_required_reverse():
     print('\nSynchronising back updates...')
     for appid, app in update_required_library.iteritems():
@@ -227,6 +251,11 @@ def synchronise_update_required_reverse():
             continue
 
         if appid not in apps:
+            if new_games_library:
+                dest_path = os.path.join(new_games_library.game_path, app.install_dir)
+                dest_acf_path = os.path.join(new_games_library.acf_path, app.acf_file)
+                synchronise_game(app, dest_path, dest_acf_path)
+                continue
             print('\n  App ID {} ({}) not found in any main library, not synchronising!'.format(appid, app.name))
             continue
 
@@ -243,21 +272,12 @@ def synchronise_update_required_reverse():
             print('\n  Local install of app {} ({}) is more recent, not synchronising!'.format(appid, app.name))
             continue
 
-        print('\n  Copying {} ({}) to {}...'.format(app.name, appid, installed.path))
-
         # TODO: Do this safely if Steam is running. Not sure what the
         # best option is for that - if nothing else I might be able to
         # rename the target directory, tell Steam to uninstall it, copy
         # the files, rename it back then restart Steam.
 
-        # None of the built in copy method in Python are exactly what I
-        # want. This will do for now, but eventually I'd like to use my
-        # own logic to decide which files to update - if the filesize
-        # or SHA1 differs (either obtained from a manifest file or
-        # reading the file) it should be updated. If all manifest files
-        # are present we can also skip (or even remove) untracked files.
-        distutils.dir_util.copy_tree(app.path, installed.path, update=1)
-        distutils.file_util.copy_file(app.acf_path, installed.acf_path)
+        synchronise_game(app, installed.path, installed.acf_path)
 
 def parse_args():
     global args
@@ -265,7 +285,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Steam library manager')
     parser.add_argument('-l', '--library', action='append',
             help='Location of a regular Steam library to process, can specify multiple times')
-    parser.add_argument('--updates-library',
+    parser.add_argument('-U', '--updates-library',
             help='A special library that is intended for games that require updates, such as a library on a portable hard drive.')
     parser.add_argument('--check', action='store_true',
             help='Check the libraries for common problems')
@@ -273,6 +293,8 @@ def parse_args():
             help='Copy any games that require updates to the library specified by --updates-library')
     parser.add_argument('--sync-updated', action='store_true',
             help='Copy any games that have been updated in the library specified by --updates-library back to the main library')
+    parser.add_argument('--copy-new-games-to',
+            help='With --sync-updated, copy games from the updates library to this library')
     parser.add_argument('--remove-untracked', action='store_true',
             help='Remove untracked directories from libraries (USE WITH CAUTION)')
     args = parser.parse_args()

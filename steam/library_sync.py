@@ -253,7 +253,8 @@ def synchronise_update_required_reverse():
         if appid not in apps:
             if new_games_library:
                 dest_path = os.path.join(new_games_library.game_path, app.install_dir)
-                dest_acf_path = os.path.join(new_games_library.acf_path, app.acf_file)
+                acf_basename = os.path.basename(app.acf_file).lower()
+                dest_acf_path = os.path.join(new_games_library.acf_path, acf_basename)
                 synchronise_game(app, dest_path, dest_acf_path)
                 continue
             print('\n  App ID {} ({}) not found in any main library, not synchronising!'.format(appid, app.name))

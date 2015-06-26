@@ -188,6 +188,9 @@ def check_app_dirs():
                 if not os.path.isdir(path):
                     print('  App ID {} ({}) in {} missing installation directory:'.format(appid, app_names[appid], library.path))
                     print('        "{}"'.format(path))
+                    if args.remove_acf_for_missing_games:
+                        print('        Removing {}'.format(app.acf_path))
+                        os.remove(app.acf_path)
 
 def check_untracked_directories():
     print('\nChecking for untracked game directories...')
@@ -298,6 +301,8 @@ def parse_args():
             help='With --sync-updated, copy games from the updates library to this library')
     parser.add_argument('--remove-untracked', action='store_true',
             help='Remove untracked directories from libraries (USE WITH CAUTION)')
+    parser.add_argument('--remove-acf-for-missing-games', action='store_true',
+            help='Remove acf files that list non-existant installation directories (CAUTION: MAY REMOVE APPS CURRENTLY BEING INSTALLED)')
     args = parser.parse_args()
 
     # TODO: Replace with config file

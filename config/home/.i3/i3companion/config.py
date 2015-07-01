@@ -58,6 +58,9 @@ def activate_key_bindings(keybinder):
 	randr.register_xf86_keys(keybinder)
         try:
             systemd.register_xf86_keys(keybinder)
+            # Additional binding for thinkpad where power button notification
+            # does not get through to X (not even /dev/input or acpi):
+            keybinder.bind_key(0, 'XF86_Launch1', systemd.power_button)
         except:
             upower.register_xf86_keys(keybinder)
             consolekit.register_xf86_keys(keybinder)

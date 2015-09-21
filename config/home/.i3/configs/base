@@ -284,6 +284,7 @@ bindsym $mod+q exec --no-startup-id "exec sh -c 'if which quickswitch.py >/dev/n
 # Toggle workspace between outputs (XXX: What if the outputs are laid out
 # vertically? I'm not convinced this is the best keybinding for this)
 bindsym $mod+Shift+Tab move workspace to output right
+bindsym $mod+Control+Tab move workspace to output down
 
 # -key, -mod and -history_key seem to be ignored from the command line. They
 # are set in ~/.config/dunstrc (besides which, exclusively doing it here is

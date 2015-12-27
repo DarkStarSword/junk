@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+# FIXME: THIS MIGHT BE DANGEROUS! ROUNDING DIFFERENCES COULD CAUSE A NEW CHUNK
+# TO START PRIOR TO WHERE THE OLD CHUNK ENDED, AND WE WOULD NOT FETCH THOSE
+# BYTES. NEED TO VERIFY IF THIS IS POSSIBLE - WE CAN DEFINITELY GO THE OTHER
+# WAY, BUT THAT IS NOT SO SERIOUS SINCE ALL WE WILL DO IS REDOWNLOAD A COUPLE
+# OF BYTES WE ALREADY HAD (though, it may temporarily exceed the maximum number
+# of simultaneous connections the server will allow, as if we care)
+
+import sys, os
+import struct # FIXME: What is the endianess of the .st file on a big endian system?
+import wget2axel
+
+def load_axel_state(state_filename, length):
+    f = open(state_filename, 'rb')
+    num_connections, = struct.unpack('i', f.read(4))
+    obtained, = struct.unpack('q', f.read(8))
+    connections = wget2axel.axel_divide(length, num_connections)
+    for (i, (start_byte, end_byte)) in enumerate(connections):
+        start_byte, = struct.unpack('q', f.read(8))
+        connections[i][0] = start_byte
+    f.close()
+    return num_connections, obtained, connections
+
+# from wget2axel.py
+#def save_axel_state(state_filename, obtained, connections):
+#	f = open(state_filename, 'w')
+#	f.write(struct.pack('i', len(connections))) # Two separate writes
+#	f.write(struct.pack('q', obtained))         # to avoid padding
+#	for (start_byte, end_byte) in connections:
+#		f.write(struct.pack('q', start_byte))
+#	f.close()
+
+def split_connections(length, old_connections):
+    new_connections = wget2axel.axel_divide(length, len(old_connections) * 2)
+    for (i, (start, end)) in enumerate(old_connections):
+        new_connections[i*2  ][0] = max(start, new_connections[i*2  ][0])
+        new_connections[i*2+1][0] = max(start, new_connections[i*2+1][0])
+        # TODO: Rounding differences in the end byte may cause us to refetch a
+        # couple of bytes we already have. Should check following chunk for bytes
+    return new_connections
+
+def main():
+    url = sys.argv[1]
+    filename = sys.argv[2]
+    state_filename = '%s.st' % filename
+    if not os.path.exists(state_filename):
+        print('Axel state file does not already exist - aborting!')
+        sys.exit(1)
+
+    length = wget2axel.url_size(url)
+
+    num_connections, obtained, old_connections = load_axel_state(state_filename, length)
+
+    new_connections = split_connections(length, old_connections)
+
+    print('Obtained: %i/%i divided into %i chunks' % (obtained, length, num_connections))
+    for (i, (start, end)) in enumerate(old_connections):
+        new_start, new_end = new_connections[i*2]
+        new_start_1, new_end_1 = new_connections[i*2+1]
+        print('Chunk %i Remaining: %i [%i:%i] -> %i [%i:%i] | %i [%i:%i]' % (i, end-start, start, end,
+            new_end-new_start, new_start, new_end, new_end_1-new_start_1, new_end_1, new_start_1))
+
+    # print('\n'.join(map(repr, connections)))
+
+    # connections = axel_divide(length, num_connections)
+
+    # save_axel_state(state_filename, filesize, connections)
+
+if __name__ == '__main__':
+    main()

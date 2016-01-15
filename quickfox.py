@@ -31,7 +31,7 @@ import argparse
 import socket
 import struct, json
 import time
-import random
+import collections
 
 peer = None
 
@@ -246,7 +246,7 @@ def send_loop(sock, peer, handshake, args):
 	fp = open(args.in_file, 'rb')
 	filesize = os.fstat(fp.fileno()).st_size
 	pos = 0
-	in_flight_chunks = {}
+	in_flight_chunks = collections.OrderedDict()
 	last_time_printed = time.time()
 	last_total_sent = total_sent = unique_sent = resends = resends_size = chunks = 0
 
@@ -254,7 +254,10 @@ def send_loop(sock, peer, handshake, args):
 		sock.settimeout(None)
 
 		if len(in_flight_chunks) and (len(in_flight_chunks) > 100 or pos >= filesize):
-			chunk = in_flight_chunks[random.choice(list(in_flight_chunks.keys()))]
+			# Resend the oldest chunk and move it to the end of the
+			# in flight list:
+			chunk = in_flight_chunks.popitem(False)[1]
+			in_flight_chunks[chunk.offset] = chunk
 			resends += 1
 			resends_size += chunk.size
 		elif pos < filesize:

@@ -127,14 +127,16 @@ setup_encfs()
 	# 1: AES
 	# 192 bits
 	# '': default block size
-	# 2: Null filename encryption,
+	# 3: Null filename encryption
+	# y: Enable per-file initialisation vectors
 	# Password
 	ionice -c 3 encfs -S --reverse "$SOURCE" "$CRYPT" << EOF
 x
 1
 192
 
-2
+3
+y
 $PASSWORD
 EOF
 }

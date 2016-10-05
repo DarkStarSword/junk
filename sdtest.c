@@ -68,7 +68,7 @@ static void verifyblock(u64 pos, unsigned int seed, unsigned int size)
 
 	for (i=0;i<size;i++) {
 		if (buf_f[i] != buf_g[i]) {
-			printf("\x1b[1;31m%#.8llx: MISMATCH: %#.2x != %#.2x\x1b[0m\n", pos+i, buf_f[i], buf_g[i]);
+			fprintf(stderr, "\x1b[1;31m%#.8llx: MISMATCH: %#.2x != %#.2x\x1b[0m\n", pos+i, buf_f[i], buf_g[i]);
 			global_error_count++;
 		}
 	}

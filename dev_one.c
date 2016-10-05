@@ -72,7 +72,7 @@ u64 writedata(char *file, u64 start, int read_before_write)
 
 out:
 	showstatus(pos);
-	printf("\n");
+	fprintf(stderr, "\n");
 	fsync(fp);
 	close(fp);
 	return pos-start;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 	int read_before_write;
 
 	if (argc < 2 || argc > 4) {
-		printf("Usage: %s device [ [ start ] read_before_write ]\nWARNING - all data on device will be destroyed!\n", argv[0]);
+		fprintf(stderr, "Usage: %s device [ [ start ] read_before_write ]\nWARNING - all data on device will be destroyed!\n", argv[0]);
 		return 1;
 	}
 	filename = argv[1];
@@ -108,13 +108,13 @@ int main(int argc, char *argv[])
 		start = start - start % BLOCK_SIZE;
 	}
 	start_human = human_size(start, &start_units);
-	printf("Starting at %#llx (%.2f %s)\n", start, start_human, start_units);
+	fprintf(stderr, "Starting at %#llx (%.2f %s)\n", start, start_human, start_units);
 	read_before_write = argc > 3;
 
 	memset(buf, 0xff, BLOCK_SIZE);
 
 	written = writedata(argv[1], start, read_before_write);
-	printf("\x1b[36m%llu bytes written to %s.\x1b[0m\n", written, filename);
+	fprintf(stderr, "\x1b[36m%llu bytes written to %s.\x1b[0m\n", written, filename);
 
 	sync();
 

@@ -69,7 +69,7 @@ u64 interpret_number(char *string)
 			case 'K': mult *= 1024;
 			case 'B': break;
 			default:
-				printf("ERR: Unrecognised filesize unit\n");
+				fprintf(stderr, "ERR: Unrecognised filesize unit\n");
 		}
 
 		/* Add null terminator after numeric value */
@@ -122,7 +122,7 @@ err:
 		errbuf_size = regerror(rc, &preg, NULL, 0);
 		errbuf = malloc(errbuf_size);
 		regerror(rc, &preg, errbuf, errbuf_size);
-		printf("regex error: %s\n", errbuf);
+		fprintf(stderr, "regex error: %s\n", errbuf);
 		free(errbuf);
 		return 0;
 	}
@@ -152,7 +152,7 @@ out:
 
 void showstatus(u64 pos)
 {
-	printf("%#.8llx...\r", pos);
+	fprintf(stderr, "%#.8llx...\r", pos);
 }
 
 void showstatus_init(struct showstatus_state *stat, u64 pos, u64 size, int read_before_write)
@@ -191,13 +191,13 @@ void showstatus_timed(u64 pos, struct showstatus_state *stat, char *msg)
 			stat->written = 0;
 		}
 		if (stat->size) {
-			printf("%s%#.8llx (%.2f %s / %.2f %s %.2f%%) @ %f %s/Sec%s...\n", msg, pos,
+			fprintf(stderr, "%s%#.8llx (%.2f %s / %.2f %s %.2f%%) @ %f %s/Sec%s...\n", msg, pos,
 					   hpos, pos_units,
 					   stat->size_human, stat->size_units,
 					   (double)pos / stat->size * 100.0,
 					   rate, units, written_percent);
 		} else {
-			printf("%s%#.8llx (%.2f %s) @ %f %s/Sec%s...\n", msg, pos,
+			fprintf(stderr, "%s%#.8llx (%.2f %s) @ %f %s/Sec%s...\n", msg, pos,
 					   hpos, pos_units, rate, units, written_percent);
 		}
 		stat->last_usec = usec;
@@ -233,12 +233,12 @@ unsigned int sd_erase_size(char *filename)
 
 	close(fp);
 
-	printf("\x1b[36mUsing erase size of %u bytes\x1b[0m\n", size);
+	fprintf(stderr, "\x1b[36mUsing erase size of %u bytes\x1b[0m\n", size);
 	return size;
 
 def_bs_close:
 	close(fp);
 def_bs:
-	printf("\x1b[1;33mNOTE: Could not determine erase block size of %s - assuming %u bytes\x1b[0m\n", devname, DEFAULT_BLOCK_SIZE);
+	fprintf(stderr, "\x1b[1;33mNOTE: Could not determine erase block size of %s - assuming %u bytes\x1b[0m\n", devname, DEFAULT_BLOCK_SIZE);
 	return DEFAULT_BLOCK_SIZE;
 }

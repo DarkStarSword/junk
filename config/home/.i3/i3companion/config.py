@@ -61,6 +61,8 @@ def activate_key_bindings(keybinder):
             # Additional binding for thinkpad where power button notification
             # does not get through to X (not even /dev/input or acpi):
             keybinder.bind_key(0, 'XF86_Launch1', systemd.power_button)
+            # Additional binding for external keyboard (MS Engonomic 4000)
+            keybinder.bind_key(0, 'XF86_Launch9', systemd.power_button)
         except:
             upower.register_xf86_keys(keybinder)
             consolekit.register_xf86_keys(keybinder)

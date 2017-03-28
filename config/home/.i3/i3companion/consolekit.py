@@ -32,10 +32,15 @@ def log_out():
 def switch_user():
     # This is display manager specific
     bus = wmiidbus.get_system_bus()
-    proxy = bus.get_object('org.gnome.DisplayManager', '/org/gnome/DisplayManager/LocalDisplayFactory')
-    iface = dbus.Interface(proxy, 'org.gnome.DisplayManager.LocalDisplayFactory')
-    iface.CreateTransientDisplay()
-    # TODO FIXME: Lock screen
+    try:
+        proxy = bus.get_object('org.freedesktop.DisplayManager', '/org/freedesktop/DisplayManager/Seat0')
+        iface = dbus.Interface(proxy, 'org.freedesktop.DisplayManager.Seat')
+        iface.SwitchToGreeter()
+    except: # Try GDM specific method
+        proxy = bus.get_object('org.gnome.DisplayManager', '/org/gnome/DisplayManager/LocalDisplayFactory')
+        iface = dbus.Interface(proxy, 'org.gnome.DisplayManager.LocalDisplayFactory')
+        iface.CreateTransientDisplay()
+        # TODO FIXME: Lock screen
 
 # Defined as list of tuples to preserve order, converted to dict when needed
 power_button_actions = [

@@ -1,7 +1,8 @@
 #!/bin/sh
 
-config_dir="$HOME/.i3/configs"
-config="$HOME/.i3/config"
+dir="$(dirname $(readlink -f $0))"
+config_dir="$dir/configs"
+config="$dir/config"
 i3_regen_config="$(readlink -f $0) $@"
 
 if [ "$(echo -e)" = "-e" ]; then

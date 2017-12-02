@@ -253,7 +253,7 @@ def send_loop(sock, peer, handshake, args):
 	while True:
 		sock.settimeout(None)
 
-		if len(in_flight_chunks) and (len(in_flight_chunks) > 100 or pos >= filesize):
+		if len(in_flight_chunks) and (len(in_flight_chunks) > 1000 or pos >= filesize):
 			# Resend the oldest chunk and move it to the end of the
 			# in flight list:
 			chunk = in_flight_chunks.popitem(False)[1]

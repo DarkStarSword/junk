@@ -91,3 +91,8 @@ nmap <F9> :call ToggleMarginHighlight()<CR>
 if filereadable('~/.vim/macros/table.vim')
 	source ~/.vim/macros/table.vim
 endif
+
+" Automatically detect external changes on various events and reload if
+" unchanged or prompt if also locally modified
+set autoread
+au CursorHold,CursorHoldI,CursorMoved,CursorMovedI,InsertEnter,InsertChange,FocusGained * checktime

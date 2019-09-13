@@ -1,6 +1,6 @@
 set hls
-set ts=8
-set sw=8
+set ts=4
+set sw=4
 set noexpandtab
 syntax on
 set background=dark

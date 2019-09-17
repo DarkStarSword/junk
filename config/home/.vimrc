@@ -116,3 +116,6 @@ endif
 " unchanged or prompt if also locally modified
 set autoread
 au CursorHold,CursorHoldI,CursorMoved,CursorMovedI,InsertEnter,InsertChange,FocusGained * checktime
+
+" Sync default cut buffer with clipboard
+set clipboard=unnamed,autoselect,exclude:cons\|linux

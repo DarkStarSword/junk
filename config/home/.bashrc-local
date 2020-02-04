@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# If not running interactively, don't do anything
+[[ "$-" != *i* ]] && return
+
+# https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linu://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
+case "$(uname -s)" in
+    Linux*)     machine=Linux;;
+    Darwin*)    machine=Mac;;
+    CYGWIN*)    machine=Cygwin;;
+    MINGW*)     machine=MinGw;;
+    *)          machine="UNKNOWN:${unameOut}"
+esac
+
+set -o vi
+bind -m vi-insert "\C-l":clear-screen
+alias 'rgrep=grep -r --color=auto'
+alias 'rg=rgrep'
+alias 'rgi=rgrep -i'
+alias '..=cd ..' # poor mans single level only substitute for fish's up one level shortcut
+alias cdr='cd "$(readlink -f "$PWD")"'
+alias td='tmux detach-client -a'
+export EDITOR=vim
+alias convert='gm convert'
+
+lst()
+{
+	 ls -lht "$@"|head|tac
+}
+
+gg()
+{
+	if test -t 1; then
+		git grep "$@" 2>/dev/null || grep -r --color=always "$@" | less -R -F -X
+	else
+		git grep "$@" 2>/dev/null || grep -r "$@" | less -F -X
+	fi
+}
+
+if [ "$machine" = "Cygwin" ]; then
+	cdw()
+	{
+		path="$(cygpath "$@")"
+		if [ -f "$path" ]; then
+			path="$(dirname "$path")"
+		fi
+		cd "$path"
+	}
+
+	vimw()
+	{
+		cdw "$@"
+		vim "$(cygpath "$@")"
+	}
+
+	# mathomatic doesn't work so well in cygwin... this alias at least sets it to
+	# use ANSI colour, but readline is broken. Works better in conemu.
+	# Windows/cygwin gnuplot must be installed separately for plot command to work:
+	#alias 'mathomatic=~/winam2/mathomatic -a'
+	mathomatic()
+	{
+		CONEMU="$(cygpath 'C:\Program Files\ConEmu\ConEmu64.exe')"
+		MATHOMATIC=~/winam2/mathomatic.exe
+		if [ -x "$MATHOMATIC" ]; then
+			if [ -x "$CONEMU" ]; then
+				"$CONEMU" "$(cygpath -w "$MATHOMATIC")"
+			elif [ -x "$MATHOMATIC" ]; then
+				"$MATHOMATIC"
+			fi
+		else
+			"$(type -f mathomatic)"
+		fi
+	}
+fi

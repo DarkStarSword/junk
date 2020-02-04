@@ -10,6 +10,14 @@ call vundle#begin()
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
 
+"Bundle 'nfvs/vim-perforce'
+""let g:perforce_use_relative_paths = 1
+"let g:perforce_open_on_change = 1
+""let g:perforce_prompt_on_open = 0
+"let g:perforce_use_cygpath = 1
+""let g:perforce_debug = 1
+"let g:perforce_auto_source_dirs = ['Z:\\']
+
 " Plugin to quickly switch between source and header files:
 Plugin 'ericcurtin/CurtineIncSw.vim'
 map <F5> :call CurtineIncSw()<CR>
@@ -38,6 +46,7 @@ setlocal spell spelllang=en_au
 set spell
 set modeline
 set nowrap
+set linebreak
 set wildmode=longest,list
 set tags=./tags,tags;
 "set formatprg=par

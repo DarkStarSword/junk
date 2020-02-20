@@ -22,6 +22,15 @@ Plugin 'VundleVim/Vundle.vim'
 Plugin 'ericcurtin/CurtineIncSw.vim'
 map <F5> :call CurtineIncSw()<CR>
 
+" Show number under cursor in various bases \= \b= \h=
+Plugin 'ShowMultiBase'
+" Note: A couple of these config options are copy+paste bugged in this plugin
+" setting the binary variant instead of hex. Trivial to fix editing the script.
+let g:ShowMultiBase_Display_Binary_Show = 0
+let g:ShowMultiBase_Display_Octal_Show = 0
+let g:ShowMultiBase_Display_Hexadecimal_SegmentSize = 8
+let g:ShowMultiBase_Register_Hexadecimal_SegmentSize = 0
+
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required

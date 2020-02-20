@@ -14,6 +14,7 @@ esac
 
 set -o vi
 bind -m vi-insert "\C-l":clear-screen
+alias ls='ls -F --color=auto'
 alias 'rgrep=grep -r --color=auto'
 alias 'rg=rgrep'
 alias 'rgi=rgrep -i'

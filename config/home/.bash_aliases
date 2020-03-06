@@ -12,6 +12,12 @@ case "$(uname -s)" in
     *)          machine="UNKNOWN:${unameOut}"
 esac
 
+HISTCONTROL=ignoreboth
+shopt -s histappend
+HISTSIZE=1000
+HISTFILESIZE=2000
+shopt -s checkwinsize
+
 set -o vi
 bind -m vi-insert "\C-l":clear-screen
 alias ls='ls -F --color=auto'

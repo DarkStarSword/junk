@@ -18,6 +18,10 @@ HISTSIZE=1000
 HISTFILESIZE=2000
 shopt -s checkwinsize
 
+if [ -d "$HOME/bin" ]; then
+	export PATH="$HOME/bin:$PATH"
+fi
+
 set -o vi
 bind -m vi-insert "\C-l":clear-screen
 alias ls='ls -F --color=auto'

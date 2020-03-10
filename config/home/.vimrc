@@ -15,7 +15,9 @@ if !empty(glob("~/.vim/bundle/Vundle.vim"))
 	"let g:perforce_use_relative_paths = 1
 	let g:perforce_open_on_change = 1
 	"let g:perforce_prompt_on_open = 0
-	let g:perforce_use_cygpath = 1
+	if has("win32unix")
+		let g:perforce_use_cygpath = 1
+	endif
 	"let g:perforce_debug = 1
 	let g:perforce_auto_source_dirs = ['Z:\\']
 

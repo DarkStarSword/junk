@@ -34,6 +34,18 @@ alias td='tmux detach-client -a'
 export EDITOR=vim
 alias convert='gm convert'
 
+if [ ! -S "$SSH_AUTH_SOCK" ]; then
+	# 10 Minute default as compromise between security + convinience on systems
+	# without a definite policy. Keys still won't be added at all unless
+	# AddKeysToAgent is enabled in ~/.ssh/config or ssh-add is manually run.
+	kill_ssh_agent()
+	{
+		kill "$SSH_AGENT_PID"
+	}
+	trap kill_ssh_agent EXIT
+	eval $(ssh-agent -s -t 10m)
+fi
+
 lst()
 {
 	 ls -lht "$@"|head|tac

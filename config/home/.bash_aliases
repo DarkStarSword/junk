@@ -94,6 +94,39 @@ if [ "$machine" = "Cygwin" ]; then
 			"$(type -f mathomatic)"
 		fi
 	}
+
+	# Replacements for pgrep/pkill that work with windows apps
+	wpgrep()
+	{
+		if [ -z "$1" ]; then
+			echo "usage: wpgrep pattern"
+			return
+		fi
+
+		tasklist.exe /FO CSV | awk -F'^"|","' '$2 ~ /'"$1"'/ {print $3}'
+	}
+	wpkill()
+	{
+		if [ -z "$1" ]; then
+			echo "usage: wpkill pid"
+			return
+		fi
+
+		for pid in $(wpgrep "$@"); do
+			taskkill.exe /PID $pid /F
+		done
+	}
+	if ! command -v pgrep >/dev/null; then
+		pgrep()
+		{
+			echo pgrep not found. Running wpgrep instead. Below PIDs will be Windows PIDs
+			wpgrep "$@"
+		}
+	fi
+	if ! command -v pkill >/dev/null; then
+		# PIDs not shown to user, so doesn't matter that they are windows PIDs
+		alias pkill=wpkill
+	fi
 fi
 
 if [ -e ~/.git-prompt.sh ]; then

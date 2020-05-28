@@ -44,6 +44,8 @@ if !empty(glob("~/.vim/bundle/Vundle.vim"))
 	" Start interactive EasyAlign for a motion/text object (e.g. gaip)
 	nmap ga <Plug>(EasyAlign)
 
+	Plugin 'DrawIt'
+
 	" All of your Plugins must be added before the following line
 	call vundle#end()            " required
 else

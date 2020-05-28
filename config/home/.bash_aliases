@@ -18,6 +18,10 @@ HISTSIZE=1000
 HISTFILESIZE=2000
 shopt -s checkwinsize
 
+if [ -d "$HOME/bin" ]; then
+	export PATH="$HOME/bin:$PATH"
+fi
+
 set -o vi
 bind -m vi-insert "\C-l":clear-screen
 alias ls='ls -F --color=auto'
@@ -29,6 +33,18 @@ alias cdr='cd "$(readlink -f "$PWD")"'
 alias td='tmux detach-client -a'
 export EDITOR=vim
 alias convert='gm convert'
+
+if [ ! -S "$SSH_AUTH_SOCK" ]; then
+	# 10 Minute default as compromise between security + convinience on systems
+	# without a definite policy. Keys still won't be added at all unless
+	# AddKeysToAgent is enabled in ~/.ssh/config or ssh-add is manually run.
+	kill_ssh_agent()
+	{
+		kill "$SSH_AGENT_PID"
+	}
+	trap kill_ssh_agent EXIT
+	eval $(ssh-agent -s -t 10m)
+fi
 
 lst()
 {
@@ -78,6 +94,39 @@ if [ "$machine" = "Cygwin" ]; then
 			"$(type -f mathomatic)"
 		fi
 	}
+
+	# Replacements for pgrep/pkill that work with windows apps
+	wpgrep()
+	{
+		if [ -z "$1" ]; then
+			echo "usage: wpgrep pattern"
+			return
+		fi
+
+		tasklist.exe /FO CSV | awk -F'^"|","' '$2 ~ /'"$1"'/ {print $3}'
+	}
+	wpkill()
+	{
+		if [ -z "$1" ]; then
+			echo "usage: wpkill pid"
+			return
+		fi
+
+		for pid in $(wpgrep "$@"); do
+			taskkill.exe /PID $pid /F
+		done
+	}
+	if ! command -v pgrep >/dev/null; then
+		pgrep()
+		{
+			echo pgrep not found. Running wpgrep instead. Below PIDs will be Windows PIDs
+			wpgrep "$@"
+		}
+	fi
+	if ! command -v pkill >/dev/null; then
+		# PIDs not shown to user, so doesn't matter that they are windows PIDs
+		alias pkill=wpkill
+	fi
 fi
 
 if [ -e ~/.git-prompt.sh ]; then

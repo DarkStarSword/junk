@@ -70,6 +70,8 @@ if [ "$machine" = "Cygwin" ]; then
 		cd "$path"
 	}
 
+	alias pwdw='cygpath -wa .'
+
 	vimw()
 	{
 		cdw "$@"

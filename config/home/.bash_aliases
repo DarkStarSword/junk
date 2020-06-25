@@ -5,7 +5,10 @@
 
 # https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linu://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
 case "$(uname -s)" in
-    Linux*)     machine=Linux;;
+    Linux*)     case "$(uname -v)" in
+					*Microsoft*)	machine=WSL;;
+					*)				machine=Linux;;
+				esac;;
     Darwin*)    machine=Mac;;
     CYGWIN*)    machine=Cygwin;;
     MINGW*)     machine=MinGw;;
@@ -60,7 +63,43 @@ gg()
 	fi
 }
 
-if [ "$machine" = "Cygwin" ]; then
+if [ "$machine" = "WSL" ]; then
+	winenv()
+	{
+		# See also: WSLENV to translate paths in environment variables passed to/from WSL
+		#           https://devblogs.microsoft.com/commandline/share-environment-vars-between-wsl-and-windows/
+		cmd.exe /c echo "%$1%" 2>/dev/null | tr -d '\r'
+	}
+
+	# Attempt to get location of WSL root in Windows. Not positive what the
+	# correct way to get this is.
+	export WSL_ROOTFS_WIN="$(wslpath -w "$(ls -d $(wslpath "$(winenv LOCALAPPDATA)")/Packages/*${WSL_DISTRO_NAME}*/LocalState/rootfs)")"
+
+	cygpath()
+	{
+		# wslpath mostly takes the place of cygpath, but doesn't expand the wsl
+		# root path when operated on a folder outside of a /mnt/ point. That is
+		# okay - explorer knows how to open the wsl$ URLs, but this should give
+		# us a way to easily find the real location:
+		wslpath "$@" | sed 's|\\\\wsl\$\\'"${WSL_DISTRO_NAME}"'\\|'"${WSL_ROOTFS_WIN//\\/\\\\}"'|'
+	}
+
+	# Substituted (virtual) drive letters aren't mounted automatically in WSL.
+	# Parse the subst.exe output and symlink them as appropriate. Handles case
+	# where the target has changed.
+	while read -r line; do
+		wintarget="$(echo "$line" | sed -E 's/^.* => (.*)\r$/\1/;')"
+		lintarget="$(cygpath "$wintarget")"
+		drive="$(echo "$line" | sed -E 's/([A-Z]):.*$/\L\1/')"
+		linmount="/mnt/$drive"
+		if [ \( ! -e "$linmount" \) -o \( -h "$linmount" -a "$(readlink "$linmount")" != "$lintarget" \) ]; then
+			echo "Mounting substituted drive $drive: ($wintarget) at $linmount..."
+			sudo ln -snf "$lintarget" "$linmount"
+		fi
+	done < <(subst.exe)
+fi
+
+if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 	cdw()
 	{
 		path="$(cygpath "$@")"

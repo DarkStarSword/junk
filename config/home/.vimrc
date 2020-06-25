@@ -49,7 +49,9 @@ if !empty(glob("~/.vim/bundle/Vundle.vim"))
 	" All of your Plugins must be added before the following line
 	call vundle#end()            " required
 else
-	echo "Vundle is not installed"
+	echo "Vundle plugin manager is not installed, install it with:"
+	echo "    git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim"
+	echo "Then do :PluginInstall from vim"
 endif
 filetype plugin indent on    " must be after vundle
 

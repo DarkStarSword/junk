@@ -131,6 +131,10 @@ if [ "$machine" = "Cygwin" ]; then
 	fi
 fi
 
+if [ ! -e ~/.git-prompt.sh ]; then
+	echo ~/git-prompt.sh is missing, installing...
+	curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
+fi
 if [ -e ~/.git-prompt.sh ]; then
 	. ~/.git-prompt.sh
 	#PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ ' # git-prompt.sh example
@@ -145,6 +149,4 @@ if [ -e ~/.git-prompt.sh ]; then
 	# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
 	#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
 	PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
-#else
-#	curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
 fi

@@ -43,10 +43,18 @@ if [ ! -S "$SSH_AUTH_SOCK" ]; then
 	# AddKeysToAgent is enabled in ~/.ssh/config or ssh-add is manually run.
 	kill_ssh_agent()
 	{
-		kill "$SSH_AGENT_PID"
+		ssh-agent -k
 	}
 	trap kill_ssh_agent EXIT
 	eval $(ssh-agent -s -t 10m)
+	# If we are running inside tmux and the ssh agent was unreachable, set it
+	# to the new one we just spawned. This will still be subject to being
+	# killed when this shell terminates rather than tmux as a whole, but I'd
+	# prefer that over leaving a detached ssh-agent running.
+	if [ -n "$TMUX" ]; then
+		tmux set-environment SSH_AGENT_PID "$SSH_AGENT_PID"
+		tmux set-environment SSH_AUTH_SOCK "$SSH_AUTH_SOCK"
+	fi
 fi
 
 lst()

@@ -32,7 +32,15 @@ stoopid_mac_rgrep()
 	if [ "$machine" != "Mac" ]; then
 		return
 	fi
-	if [ $# -ge 2 ]; then
+	n=0
+	while (( "$#" )); do
+		case "$1" in
+			-*) ;;
+			 *) n=$(($n+1)) ;;
+		esac
+		shift 1
+	done
+	if [ $n -ge 2 ]; then
 		# User already specified the path
 		return
 	fi

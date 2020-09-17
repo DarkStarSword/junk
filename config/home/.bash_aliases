@@ -201,22 +201,30 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 	fi
 fi
 
-if [ ! -e ~/.git-prompt.sh ]; then
-	echo ~/git-prompt.sh is missing, installing...
-	curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
-fi
-if [ -e ~/.git-prompt.sh ]; then
-	. ~/.git-prompt.sh
-	#PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ ' # git-prompt.sh example
-	#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ ' # cygwin default
-	#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n$(__git_ps1 "(%s)")\$ '
+if command -v git >/dev/null; then
+	# Mac users who have uninstalled Xcode may have a broken git binary left in
+	# place, which pops up an annoying as fuck dialog when it is run, and if we
+	# enable git-prompt that means every damn time the shell prompt displays.
+	# Make sure this is not Mac, or Xcode is installed to continue:
+	if [ "$machine" != "Mac" -o -x "/Applications/Xcode.app" ]; then
+		if [ ! -e ~/.git-prompt.sh ]; then
+			echo ~/git-prompt.sh is missing, installing...
+			curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
+		fi
+		if [ -e ~/.git-prompt.sh ]; then
+			. ~/.git-prompt.sh
+			#PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ ' # git-prompt.sh example
+			#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ ' # cygwin default
+			#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n$(__git_ps1 "(%s)")\$ '
 
-	# Alernate method with colour support:
-	GIT_PS1_SHOWSTASHSTATE=1
-	GIT_PS1_SHOWCOLORHINTS=1
-	GIT_PS1_SHOWUPSTREAM="auto"
-	# Slow option - GIT_PS1_SHOWDIRTYSTATE=1
-	# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
-	#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
-	PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
+			# Alernate method with colour support:
+			GIT_PS1_SHOWSTASHSTATE=1
+			GIT_PS1_SHOWCOLORHINTS=1
+			GIT_PS1_SHOWUPSTREAM="auto"
+			# Slow option - GIT_PS1_SHOWDIRTYSTATE=1
+			# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
+			#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
+			PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
+		fi
+	fi
 fi

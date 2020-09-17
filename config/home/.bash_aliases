@@ -25,10 +25,41 @@ if [ -d "$HOME/bin" ]; then
 	export PATH="$HOME/bin:$PATH"
 fi
 
+stoopid_mac_rgrep()
+{
+	# Workaround recursive grep on mac trying to search stdin instead of the
+	# filesystem when no directory specified
+	if [ "$machine" != "Mac" ]; then
+		return
+	fi
+	n=0
+	while (( "$#" )); do
+		case "$1" in
+			-*) ;;
+			 *) n=$(($n+1)) ;;
+		esac
+		shift 1
+	done
+	if [ $n -ge 2 ]; then
+		# User already specified the path
+		return
+	fi
+	echo .
+}
+
+if [ "$machine" == "Mac" ]; then
+	alias ls='ls -F -G'
+	rgrep()
+	{
+		grep -r --color=auto "$@" $(stoopid_mac_rgrep "$@")
+	}
+else
+	alias ls='ls -F --color=auto'
+	alias 'rgrep=grep -r --color=auto'
+fi
+
 set -o vi
 bind -m vi-insert "\C-l":clear-screen
-alias ls='ls -F --color=auto'
-alias 'rgrep=grep -r --color=auto'
 alias 'rg=rgrep'
 alias 'rgi=rgrep -i'
 alias '..=cd ..' # poor mans single level only substitute for fish's up one level shortcut
@@ -65,9 +96,9 @@ lst()
 gg()
 {
 	if test -t 1; then
-		git grep "$@" 2>/dev/null || grep -r --color=always "$@" | less -R -F -X
+		git grep "$@" 2>/dev/null || grep -r --color=always "$@" $(stoopid_mac_rgrep "$@") | less -R -F -X
 	else
-		git grep "$@" 2>/dev/null || grep -r "$@" | less -F -X
+		git grep "$@" 2>/dev/null || grep -r "$@" $(stoopid_mac_rgrep "$@") | less -F -X
 	fi
 }
 

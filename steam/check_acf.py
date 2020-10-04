@@ -369,6 +369,10 @@ def find_game_path(app_state, library_root, acf_filename, opts):
 		ui._print(pretty)
 	return game_path
 
+def get_installed_depots(app_state):
+	installed_depots = app_state['InstalledDepots']
+	return {k: v['manifest'] for k,v in installed_depots.items()}
+
 def get_mounted_depots(app_state):
 	try:
 		mounted_depots = app_state['MountedDepots']
@@ -377,7 +381,11 @@ def get_mounted_depots(app_state):
 		#       'MountedDepots'. Not sure why the difference.
 		# XXX: Double check 'ActiveDepots' is the right key on
 		#      my Windows box
-		return app_state['ActiveDepots']
+		try:
+			return app_state['ActiveDepots']
+		except KeyError:
+			# Seems some acf files no longer have either Mounted or Active Depots section
+			return get_installed_depots(app_state)
 	assert('ActiveDepots' not in app_state)
 	return mounted_depots
 

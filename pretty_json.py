@@ -11,7 +11,8 @@ def main():
     else:
         print('Usage: %s file' % sys.argv[0])
         return
-    json.dump(json.load(f), sys.stdout, indent=2)
+    j = json.dumps(json.load(f), indent=2)
+    print('\n'.join(map(str.rstrip, j.splitlines())))
 
 if __name__ == '__main__':
     main()

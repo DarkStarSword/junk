@@ -138,6 +138,18 @@ if [ "$machine" = "WSL" ]; then
 	done < <(subst.exe)
 fi
 
+if [ "$machine" = "Cygwin" ]; then
+	#alias sudo='cygstart --action=runas'
+	sudo()
+	{
+		if [ ! -e ~/.cygwin-sudo ]; then
+			echo Installing cygwin-sudo...
+			git clone git://github.com/Chronial/cygwin-sudo ~/.cygwin-sudo
+		fi
+		~/.cygwin-sudo/cygwin-sudo.py "$@"
+	}
+fi
+
 if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 	cdw()
 	{
@@ -207,16 +219,6 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		# PIDs not shown to user, so doesn't matter that they are windows PIDs
 		alias pkill=wpkill
 	fi
-
-	#alias sudo='cygstart --action=runas'
-	sudo()
-	{
-		if [ ! -e ~/.cygwin-sudo ]; then
-			echo Installing cygwin-sudo...
-			git clone git://github.com/Chronial/cygwin-sudo ~/.cygwin-sudo
-		fi
-		~/.cygwin-sudo/cygwin-sudo.py "$@"
-	}
 
 	p4c()
 	{

@@ -217,6 +217,38 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		fi
 		~/.cygwin-sudo/cygwin-sudo.py "$@"
 	}
+
+	p4c()
+	{
+		# Compensate for the p4 client's lack of a sensibly easy way to switch
+		# to the appropriate workspace for the current directory
+
+		# 1. Get list of possible workspaces matching this directory. p4
+		# command line can filter to the current user, then we filter to any
+		# with a workspace root that is [a parent to] the current directory.
+		# FIXME: Handle spaces in workspace name or directory
+		local clients="$(p4 clients --me | awk -v PWDW="$(pwdw|sed 's/\\/\\\\/g')\\\\" \
+		'{
+			if (tolower($5."\\") == tolower(substr(PWDW, 0, length($5)+1))) {
+				print $2
+			}
+		}')"
+
+		# 2. We may still have found multiple matching workspaces if the user
+		# works/builds on multiple machines. Iterate over each looking for one
+		# with a hostname matching the current machine. If for some reason
+		# there are still multiple matches we just go with the first.
+		local client
+		for client in $clients; do
+			local p4host="$(p4 client -o "$client" | awk '/^Host:/ {gsub("\r","",$2); print $2}')"
+			if [ "$p4host" = "$HOSTNAME" ]; then
+				p4 set p4client="$client"
+				p4 info | grep '^Client name:'
+				return
+			fi
+		done
+		echo "Cannot find p4 workspace for current directory"
+	}
 fi
 
 if command -v git >/dev/null; then

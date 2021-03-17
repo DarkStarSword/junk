@@ -12,7 +12,7 @@ for f in "$@"; do
 	#orientation=$(identify -format '%[fx:(h>w)]' "$f")
 
 	# file + shell to get orientation. Much faster:
-	test $(file -L "$f" | sed -E 's/.*, ([0-9]+) ?x ?([0-9]+).*$/\1 -gt \2/')
+	test $(file -L "$f" | sed -E 's/^.*(, ([0-9]+) ?x ?([0-9]+)|, height=([0-9]+),.*, width=([0-9]+)).*$/\2\5 -gt \3\4/')
 	orientation=$?
 
 	if [ $orientation -eq 1 ]; then

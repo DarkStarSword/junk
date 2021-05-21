@@ -161,6 +161,8 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 	}
 
 	alias pwdw='cygpath -wa .'
+	alias cu='cygpath -ua'
+	alias cw='cygpath -wa'
 
 	vimw()
 	{

@@ -65,6 +65,7 @@ alias 'rgi=rgrep -i'
 alias '..=cd ..' # poor mans single level only substitute for fish's up one level shortcut
 alias cdr='cd "$(readlink -f "$PWD")"'
 alias td='tmux detach-client -a'
+alias ta='tmux attach'
 export EDITOR=vim
 alias convert='gm convert'
 

@@ -254,6 +254,11 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		done
 		echo "Cannot find p4 workspace for current directory"
 	}
+
+	p4e()
+	{
+		p4 edit $(cw "$@")
+	}
 fi
 
 if command -v git >/dev/null; then

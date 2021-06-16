@@ -255,6 +255,11 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		echo "Cannot find p4 workspace for current directory"
 	}
 
+	p4a()
+	{
+		p4 add $(cw "$@")
+	}
+
 	p4e()
 	{
 		p4 edit $(cw "$@")

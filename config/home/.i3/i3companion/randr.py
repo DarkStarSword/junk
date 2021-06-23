@@ -52,6 +52,11 @@ def adj_backlight(delta):
 		for (backlight_atom, backlight_query, backlight_prop) in backlight_cookies:
 			try:
 				(bmin, bmax) = list(backlight_query.reply().validValues)
+
+                                # Minimum 1% backlight as safety against
+                                # turning off completely. Needed for Mac Air.
+                                bmin = max(bmin, bmax / 100.0)
+
 				val = backlight_prop.reply().data
 
                                 # This seems wrong - why am I getting an array

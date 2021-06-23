@@ -176,6 +176,7 @@ set $lock exec --no-startup-id exec i3lock --dpms -t -i ~/.i3/lock-tiled.png
 # set $mute_channel Master
 
 set $browser           exec --no-startup-id exec notify-send -t 500 'Launching Browser...'; exec exec sensible-browser
+set $browser_private   exec --no-startup-id exec notify-send -t 500 'Launching Browser...'; exec exec sensible-browser --private-window
 set $email             exec exec i3-sensible-terminal -bg Black -fg White -e sup-mail
 set $rss               exec exec i3-sensible-terminal -e canto
 set $network_manager   exec exec i3-sensible-terminal -e wicd-curses
@@ -256,6 +257,7 @@ bindsym $mod+Control+Return       exec exec i3-sensible-terminal $term_bw
 bindsym $mod+Control+Shift+Return exec exec i3-sensible-terminal $term_large_font $term_bw
 
 bindsym $mod+w         $browser
+bindsym $mod+Shift+w   $browser_private
 bindsym $mod+e         $email
 bindsym $mod+r         $rss
 bindsym $mod+y         $python

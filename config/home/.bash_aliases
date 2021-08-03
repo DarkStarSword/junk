@@ -103,6 +103,15 @@ gg()
 	fi
 }
 
+ggh()
+{
+	if test -t 1; then
+      find . -iname '*.h' -print0 | xargs -0 grep -r --color=always "$@" $(stoopid_mac_rgrep "$@") | less -R -F -X
+	else
+      find . -iname '*.h' -print0 | xargs -0 grep -r "$@" $(stoopid_mac_rgrep "$@") | less -F -X
+	fi
+}
+
 if [ "$machine" = "WSL" ]; then
 	winenv()
 	{

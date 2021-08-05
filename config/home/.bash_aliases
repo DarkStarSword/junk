@@ -62,12 +62,19 @@ set -o vi
 bind -m vi-insert "\C-l":clear-screen
 alias 'rg=rgrep'
 alias 'rgi=rgrep -i'
-alias '..=cd ..' # poor mans single level only substitute for fish's up one level shortcut
 alias cdr='cd "$(readlink -f "$PWD")"'
 alias td='tmux detach-client -a'
 alias ta='tmux attach'
 export EDITOR=vim
 alias convert='gm convert'
+
+# poor mans substitute for fish's up one level shortcuts. Ideally would alias
+# ../.. = cd ../.., etc, but can't have a / in the alias, so just .... = cd ../..:
+for x in $(seq 10); do
+   lhs=${lhs}..
+   rhs=${rhs}../
+   alias "${lhs}=cd ${rhs}"
+done
 
 if [ ! -S "$SSH_AUTH_SOCK" ]; then
 	# 10 Minute default as compromise between security + convinience on systems

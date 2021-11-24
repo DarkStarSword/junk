@@ -282,6 +282,16 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 	}
 fi
 
+# Change color if this is a remote shell to help user notice if they are typing
+# into wrong shell. Except, if the shell is under tmux we leave the original
+# colour, since my .tmux.conf already sets the status bar colour for remote
+# sessions, and in this case we want the shell prompt in each pane to indicate
+# whether we are local *relative to the tmux session*, or remote from it.
+PS1_COLOR=32
+if [ -n "$SSH_CONNECTION" -a -z "$TMUX" ]; then
+   PS1_COLOR=36
+fi
+
 if command -v git >/dev/null; then
 	# Mac users who have uninstalled Xcode may have a broken git binary left in
 	# place, which pops up an annoying as fuck dialog when it is run, and if we
@@ -305,7 +315,7 @@ if command -v git >/dev/null; then
 			# Slow option - GIT_PS1_SHOWDIRTYSTATE=1
 			# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
 			#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
-			PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
+			PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e['$PS1_COLOR'm\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
 		fi
 	fi
 fi

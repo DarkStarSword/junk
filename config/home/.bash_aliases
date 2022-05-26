@@ -67,6 +67,7 @@ alias td='tmux detach-client -a'
 alias ta='tmux attach'
 export EDITOR=vim
 alias convert='gm convert'
+alias -- '-=cd -'
 
 # poor mans substitute for fish's up one level shortcuts. Ideally would alias
 # ../.. = cd ../.., etc, but can't have a / in the alias, so just .... = cd ../..:

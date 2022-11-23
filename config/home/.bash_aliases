@@ -5,8 +5,9 @@
 
 # https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linu://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
 case "$(uname -s)" in
-    Linux*)     case "$(uname -v)" in
-					*Microsoft*)	machine=WSL;;
+    Linux*)     case "$(uname -r)" in
+					*Microsoft*)	machine=WSL1;;
+					*microsoft*)	machine=WSL2;;
 					*)				machine=Linux;;
 				esac;;
     Darwin*)    machine=Mac;;
@@ -120,7 +121,7 @@ ggh()
 	fi
 }
 
-if [ "$machine" = "WSL" ]; then
+if [ "$machine" = "WSL1" -o "$machine" = "WSL2" ]; then
 	winenv()
 	{
 		# See also: WSLENV to translate paths in environment variables passed to/from WSL
@@ -128,22 +129,32 @@ if [ "$machine" = "WSL" ]; then
 		cmd.exe /c echo "%$1%" 2>/dev/null | tr -d '\r'
 	}
 
-	# Attempt to get location of WSL root in Windows. Not positive what the
-	# correct way to get this is.
-	export WSL_ROOTFS_WIN="$(wslpath -w "$(ls -d $(wslpath "$(winenv LOCALAPPDATA)")/Packages/*${WSL_DISTRO_NAME}*/LocalState/rootfs)")"
+	if [ "$machine" = "WSL1" ]; then
+		# Attempt to get location of WSL root in Windows. Not positive what the
+		# correct way to get this is.
+		export WSL_ROOTFS_WIN="$(wslpath -w "$(ls -d "$(wslpath "$(winenv LOCALAPPDATA)")"/Packages/*${WSL_DISTRO_NAME}*/LocalState/rootfs)")"
 
-	cygpath()
-	{
-		# wslpath mostly takes the place of cygpath, but doesn't expand the wsl
-		# root path when operated on a folder outside of a /mnt/ point. That is
-		# okay - explorer knows how to open the wsl$ URLs, but this should give
-		# us a way to easily find the real location:
-		wslpath "$@" | sed 's|\\\\wsl\$\\'"${WSL_DISTRO_NAME}"'\\|'"${WSL_ROOTFS_WIN//\\/\\\\}"'|'
-	}
+		cygpath()
+		{
+			# wslpath mostly takes the place of cygpath, but doesn't expand the wsl
+			# root path when operated on a folder outside of a /mnt/ point. That is
+			# okay - explorer knows how to open the wsl$ URLs, but this should give
+			# us a way to easily find the real location:
+			wslpath "$@" | sed 's|\\\\wsl\$\\'"${WSL_DISTRO_NAME}"'\\|'"${WSL_ROOTFS_WIN//\\/\\\\}"'|'
+		}
+	else
+		# WSL2 uses a loopback ext4 image, so WSL paths are not directly
+		# accessible to Windows as they were before, and wslpath now returns
+		# "\\wsl.localhost\" in WSL2 instead of "wsl$" as it did in WSL1, so
+		# may work directly with applications that can handle windows network
+		# paths.
+		alias cygpath=wslpath
+	fi
 
 	# Substituted (virtual) drive letters aren't mounted automatically in WSL.
 	# Parse the subst.exe output and symlink them as appropriate. Handles case
 	# where the target has changed.
+	# XXX: Untested on WSL2
 	while read -r line; do
 		wintarget="$(echo "$line" | sed -E 's/^.* => (.*)\r$/\1/;')"
 		lintarget="$(cygpath "$wintarget")"
@@ -168,7 +179,7 @@ if [ "$machine" = "Cygwin" ]; then
 	}
 fi
 
-if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
+if [ "$machine" = "Cygwin" -o "$machine" = "WSL1" -o "$machine" = "WSL2" ]; then
 	cdw()
 	{
 		path="$(cygpath "$@")"
@@ -249,7 +260,7 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		# command line can filter to the current user, then we filter to any
 		# with a workspace root that is [a parent to] the current directory.
 		# FIXME: Handle spaces in workspace name or directory
-		local clients="$(p4 clients --me | awk -v PWDW="$(pwdw|sed 's/\\/\\\\/g')\\\\" \
+		local clients="$(p4.exe clients --me | awk -v PWDW="$(pwdw|sed 's/\\/\\\\/g')\\\\" \
 		'{
 			if (tolower($5."\\") == tolower(substr(PWDW, 0, length($5)+1))) {
 				print $2
@@ -262,10 +273,10 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 		# there are still multiple matches we just go with the first.
 		local client
 		for client in $clients; do
-			local p4host="$(p4 client -o "$client" | awk '/^Host:/ {gsub("\r","",$2); print $2}')"
+			local p4host="$(p4.exe client -o "$client" | awk '/^Host:/ {gsub("\r","",$2); print $2}')"
 			if [ "$p4host" = "$HOSTNAME" ]; then
-				p4 set p4client="$client"
-				p4 info | grep '^Client name:'
+				p4.exe set p4client="$client"
+				p4.exe info | grep '^Client name:'
 				return
 			fi
 		done
@@ -274,12 +285,12 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL" ]; then
 
 	p4a()
 	{
-		p4 add $(cw "$@")
+		p4.exe add $(cw "$@")
 	}
 
 	p4e()
 	{
-		p4 edit $(cw "$@")
+		p4.exe edit $(cw "$@")
 	}
 fi
 

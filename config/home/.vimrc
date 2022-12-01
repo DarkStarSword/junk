@@ -165,8 +165,10 @@ endif
 set autoread
 au CursorHold,CursorHoldI,CursorMoved,CursorMovedI,InsertEnter,InsertChange,FocusGained * checktime
 
-" Sync default cut buffer with clipboard
-set clipboard=unnamed,autoselect,exclude:cons\|linux
+" Sync default cut buffer with clipboard. Make sure vim-gtk3 is installed for
+" this to work, even if not using GUI. Also works on WSL2 (unnamedplus) if
+" WSL2 graphics drivers are installed.
+set clipboard=unnamed,unnamedplus,autoselect,exclude:cons\|linux
 
 " Start gvim maximised
 " https://vi.stackexchange.com/questions/1937/how-do-i-get-gvim-to-start-maximised-in-windows

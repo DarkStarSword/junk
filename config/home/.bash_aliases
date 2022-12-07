@@ -328,6 +328,10 @@ if command -v git >/dev/null; then
 			# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
 			#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
 			PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e['$PS1_COLOR'm\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
+			if [ "$machine" = "WSL2" ]; then # FIXME: Test for Windows Terminal rather than WSL
+				# https://learn.microsoft.com/en-us/windows/terminal/tutorials/new-tab-same-directory
+				PROMPT_COMMAND=${PROMPT_COMMAND:+"$PROMPT_COMMAND; "}'printf "\e]9;9;%s\e\\" "$(wslpath -w "$PWD")"'
+			fi
 		fi
 	fi
 fi

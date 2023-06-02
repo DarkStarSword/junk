@@ -305,32 +305,37 @@ if [ -n "$SSH_CONNECTION" -a -z "$TMUX" ]; then
 fi
 
 if command -v git >/dev/null; then
-	# Mac users who have uninstalled Xcode may have a broken git binary left in
-	# place, which pops up an annoying as fuck dialog when it is run, and if we
-	# enable git-prompt that means every damn time the shell prompt displays.
-	# Make sure this is not Mac, or Xcode is installed to continue:
-	if [ "$machine" != "Mac" -o -x "/Applications/Xcode.app" ]; then
-		if [ ! -e ~/.git-prompt.sh ]; then
-			echo ~/git-prompt.sh is missing, installing...
-			curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
-		fi
-		if [ -e ~/.git-prompt.sh ]; then
-			. ~/.git-prompt.sh
-			#PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ ' # git-prompt.sh example
-			#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ ' # cygwin default
-			#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n$(__git_ps1 "(%s)")\$ '
+	# `git bash` already shows the git status in the prompt, so check if we are
+	# running under git bash based on `EXEPATH=C:\Program Files\Git` and leave
+	# the prompt alone. Otherwise add this feature via git-prompt.sh
+	if [[ "$EXEPATH" != *"Git"* ]]; then
+		# Mac users who have uninstalled Xcode may have a broken git binary left in
+		# place, which pops up an annoying as fuck dialog when it is run, and if we
+		# enable git-prompt that means every damn time the shell prompt displays.
+		# Make sure this is not Mac, or Xcode is installed to continue:
+		if [ "$machine" != "Mac" -o -x "/Applications/Xcode.app" ]; then
+			if [ ! -e ~/.git-prompt.sh ]; then
+				echo ~/git-prompt.sh is missing, installing...
+				curl -L https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh > ~/.git-prompt.sh
+			fi
+			if [ -e ~/.git-prompt.sh ]; then
+				. ~/.git-prompt.sh
+				#PS1='[\u@\h \W$(__git_ps1 " (%s)")]\$ ' # git-prompt.sh example
+				#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n\$ ' # cygwin default
+				#PS1='\[\e]0;\w\a\]\n\[\e[32m\]\u@\h \[\e[33m\]\w\[\e[0m\]\n$(__git_ps1 "(%s)")\$ '
 
-			# Alernate method with colour support:
-			GIT_PS1_SHOWSTASHSTATE=1
-			GIT_PS1_SHOWCOLORHINTS=1
-			GIT_PS1_SHOWUPSTREAM="auto"
-			# Slow option - GIT_PS1_SHOWDIRTYSTATE=1
-			# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
-			#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
-			PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e['$PS1_COLOR'm\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
-			if [ "$machine" = "WSL2" ]; then # FIXME: Test for Windows Terminal rather than WSL
-				# https://learn.microsoft.com/en-us/windows/terminal/tutorials/new-tab-same-directory
-				PROMPT_COMMAND=${PROMPT_COMMAND:+"$PROMPT_COMMAND; "}'printf "\e]9;9;%s\e\\" "$(wslpath -w "$PWD")"'
+				# Alernate method with colour support:
+				GIT_PS1_SHOWSTASHSTATE=1
+				GIT_PS1_SHOWCOLORHINTS=1
+				GIT_PS1_SHOWUPSTREAM="auto"
+				# Slow option - GIT_PS1_SHOWDIRTYSTATE=1
+				# Slow option - GIT_PS1_SHOWUNTRACKEDFILES=1
+				#PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "' # git-prompt.sh example
+				PROMPT_COMMAND='__git_ps1 "\[\e]0;\w\a\]\n\[\e['$PS1_COLOR'm\]\u@\h \[\e[33m\]\w\[\e[0m\]" "\n$ "'
+				if [ "$machine" = "WSL2" ]; then # FIXME: Test for Windows Terminal rather than WSL
+					# https://learn.microsoft.com/en-us/windows/terminal/tutorials/new-tab-same-directory
+					PROMPT_COMMAND=${PROMPT_COMMAND:+"$PROMPT_COMMAND; "}'printf "\e]9;9;%s\e\\" "$(wslpath -w "$PWD")"'
+				fi
 			fi
 		fi
 	fi

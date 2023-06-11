@@ -1,3 +1,5 @@
+#Requires AutoHotkey v2.0
+
 ~XButton2 & WheelDown::AltTab
 ~XButton2 & WheelUp::ShiftAltTab
 ~XButton2 & MButton::send "#{Tab}"

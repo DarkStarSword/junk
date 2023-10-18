@@ -168,7 +168,33 @@ au CursorHold,CursorHoldI,CursorMoved,CursorMovedI,InsertEnter,InsertChange,Focu
 " Sync default cut buffer with clipboard. Make sure vim-gtk3 is installed for
 " this to work, even if not using GUI. Also works on WSL2 (unnamedplus) if
 " WSL2 graphics drivers are installed.
-set clipboard=unnamed,unnamedplus,autoselect,exclude:cons\|linux
+if !has('nvim')
+	set clipboard=unnamed,unnamedplus,autoselect,exclude:cons\|linux
+else
+	if has('wsl')
+		" This is supposed to be unecessary now WSL2 has proper clipboard
+		" integration, but recently on a new install only yank has been
+		" working for me and not put, so switching to neovim that can be
+		" configured to call an external process to work around the issue.
+		" win32yank.exe also comes highly recommended for use with neovim to
+		" work around clipboard issues, but it's an extra dependency I'd
+		" rather not have to remember to install.
+		" https://github.com/neovim/neovim/wiki/FAQ#how-to-use-the-windows-clipboard-from-wsl
+		let g:clipboard = {
+		  \   'name': 'WslClipboard',
+		  \   'copy': {
+		  \      '+': 'clip.exe',
+		  \      '*': 'clip.exe',
+		  \    },
+		  \   'paste': {
+		  \      '+': 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+		  \      '*': 'powershell.exe -c [Console]::Out.Write($(Get-Clipboard -Raw).tostring().replace("`r", ""))',
+		  \   },
+		  \   'cache_enabled': 0,
+		  \ }
+	end
+	set clipboard=unnamed,unnamedplus
+end
 
 " Start gvim maximised
 " https://vi.stackexchange.com/questions/1937/how-do-i-get-gvim-to-start-maximised-in-windows

@@ -64,11 +64,21 @@ bind -m vi-insert "\C-l":clear-screen
 alias 'rg=rgrep'
 alias 'rgi=rgrep -i'
 alias cdr='cd "$(readlink -f "$PWD")"'
-alias td='tmux detach-client -a'
-alias ta='tmux attach'
 export EDITOR=vim
 alias convert='gm convert'
 alias -- '-=cd -'
+alias td='tmux detach-client -a'
+alias ta='tmux attach'
+# TODO: Try reptyr, criu, cryoPID, etc and see if any are suitable for moving
+# current shell to tmux, bonus points if terminal contents/history, other
+# parent/child processes / background jobs, etc can also be transferred.
+# For now, just creating a new window and attaching to it will do to at least
+# get the CWD into tmux shell. Also detach/hangup other clients so I don't wind
+# up with too many windows all attached to the same session:
+alias tn='tmux new-window \; attach -x'
+# Kind of works, but the attach is a bit pointless since it loses the pty so we
+# have to close the current window and find the original window attached to tmux:
+#alias tA='tmux new-window /bin/sh -c "reptyr $$" \; attach'
 
 # poor mans substitute for fish's up one level shortcuts. Ideally would alias
 # ../.. = cd ../.., etc, but can't have a / in the alias, so just .... = cd ../..:

@@ -3,7 +3,7 @@
 # If not running interactively, don't do anything
 [[ "$-" != *i* ]] && return
 
-# https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linu://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
+# https://stackoverflow.com/questions/3466166/how-to-check-if-running-in-cygwin-mac-or-linux
 case "$(uname -s)" in
     Linux*)     case "$(uname -r)" in
 					*Microsoft*)	machine=WSL1;;

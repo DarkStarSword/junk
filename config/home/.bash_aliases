@@ -187,6 +187,25 @@ if [ "$machine" = "Cygwin" ]; then
 		fi
 		~/.cygwin-sudo/cygwin-sudo.py "$@"
 	}
+
+	# mathomatic doesn't work so well in cygwin... this alias at least sets it to
+	# use ANSI colour, but readline is broken. Works better in conemu.
+	# Windows/cygwin gnuplot must be installed separately for plot command to work:
+	#alias 'mathomatic=~/winam2/mathomatic -a'
+	mathomatic()
+	{
+		CONEMU="$(cygpath 'C:\Program Files\ConEmu\ConEmu64.exe')"
+		MATHOMATIC=~/winam2/mathomatic.exe
+		if [ -x "$MATHOMATIC" ]; then
+			if [ -x "$CONEMU" ]; then
+				"$CONEMU" "$(cygpath -w "$MATHOMATIC")"
+			elif [ -x "$MATHOMATIC" ]; then
+				"$MATHOMATIC"
+			fi
+		else
+			"$(type -f mathomatic)"
+		fi
+	}
 fi
 
 if [ "$machine" = "Cygwin" -o "$machine" = "WSL1" -o "$machine" = "WSL2" ]; then
@@ -207,25 +226,6 @@ if [ "$machine" = "Cygwin" -o "$machine" = "WSL1" -o "$machine" = "WSL2" ]; then
 	{
 		cdw "$@"
 		vim "$(cygpath "$@")"
-	}
-
-	# mathomatic doesn't work so well in cygwin... this alias at least sets it to
-	# use ANSI colour, but readline is broken. Works better in conemu.
-	# Windows/cygwin gnuplot must be installed separately for plot command to work:
-	#alias 'mathomatic=~/winam2/mathomatic -a'
-	mathomatic()
-	{
-		CONEMU="$(cygpath 'C:\Program Files\ConEmu\ConEmu64.exe')"
-		MATHOMATIC=~/winam2/mathomatic.exe
-		if [ -x "$MATHOMATIC" ]; then
-			if [ -x "$CONEMU" ]; then
-				"$CONEMU" "$(cygpath -w "$MATHOMATIC")"
-			elif [ -x "$MATHOMATIC" ]; then
-				"$MATHOMATIC"
-			fi
-		else
-			"$(type -f mathomatic)"
-		fi
 	}
 
 	# Replacements for pgrep/pkill that work with windows apps

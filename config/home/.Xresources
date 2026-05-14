@@ -11,7 +11,13 @@
 *.VT100.translations:	#override \n\
 			Shift Ctrl <Key>Return:		spawn-new-terminal() \n\
 			Shift <KeyPress>KP_Insert:	insert-selection(SELECT, CUT_BUFFER0) \n\
-			Shift <KeyPress>KP_0:		insert-selection(SELECT, CUT_BUFFER0)
+			Shift <KeyPress>KP_0:		insert-selection(SELECT, CUT_BUFFER0) \n\
+			Shift <Key>KP_Prior:		scroll-back(1, page) \n\
+			Shift <Key>KP_Next:			scroll-forw(1, page) \n\
+			Ctrl <Key>minus:			smaller-vt-font() \n\
+			Ctrl <Key>KP_Subtract:		smaller-vt-font() \n\
+			Ctrl <Key>plus:				larger-vt-font() \n\
+			Ctrl <Key>KP_Add:			larger-vt-font()
 
 /* Allow tmux to set X selection (clipboard) */
 *.VT100.disallowedWindowOps:	20,21,SetXprop

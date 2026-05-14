@@ -192,7 +192,8 @@ set $eject             exec --no-startup-id exec eject
 # TODO: Statusbar
 set $music1            exec exec i3-sensible-terminal -e cmus
 set $music2            exec exec i3-sensible-terminal -e mocp
-set $mixer             exec --no-startup-id "exec sh -c 'if which pavucontrol >/dev/null; then i3-msg exec exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
+set $mixer             exec --no-startup-id "exec sh -c 'if which -s pulsemixer; then i3-sensible-terminal -e pulsemixer; elif which -s pavucontrol ; then i3-msg exec exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
+set $mixer2            exec --no-startup-id "exec sh -c 'if which -s pavucontrol; then i3-msg exec exec pavucontrol; else i3-sensible-terminal -e alsamixer; fi'"
 
 # TODO: Allow multiple channels to be synchronised (e.g. when subwoofers, dock
 # or other unusual outputs do not slave off master or pcm in hardware)
@@ -240,6 +241,7 @@ bindsym $mod+grave      $lock
 bindsym $mod+XF86AudioPlay        $mixer
 bindsym $mod+XF86AudioPause       $mixer
 bindsym $mod+Shift+backslash      $mixer
+bindsym $mod+Ctrl+backslash       $mixer2
 
 # TODO: Allow the XF86Audio* grabs to be released to allow applications that
 # want to grab them directly can do so
